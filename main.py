@@ -3,11 +3,16 @@ import numpy as np
 from camera import CameraThread
 from pose_detection import PoseDetectionThread
 
+FRONT_WIDTH = 640
+FRONT_HEIGHT = 360
+PROFILE_WIDTH = 360
+PROFILE_HEIGHT = 640
+BORDER_PADDING = (PROFILE_HEIGHT - FRONT_HEIGHT) // 2
+
 cv2.namedWindow('Body detection', cv2.WINDOW_NORMAL)
 
-front_camera = CameraThread(0, 640, 360)
-profile_camera = CameraThread('http://192.168.2.23:8080/video', 360, 640)
-
+front_camera = CameraThread(0, FRONT_WIDTH, FRONT_HEIGHT)
+profile_camera = CameraThread('http://192.168.2.23:8080/video', PROFILE_WIDTH, PROFILE_HEIGHT)
 front_pose = PoseDetectionThread()
 profile_pose = PoseDetectionThread()
 
@@ -28,7 +33,7 @@ while True:
     
     if front_result is not None and profile_result is not None:
         front_result = cv2.copyMakeBorder(
-            front_result, 80, 80, 0, 0, 
+            front_result, BORDER_PADDING, BORDER_PADDING, 0, 0, 
             cv2.BORDER_CONSTANT, 
             value=[0, 0, 0]
         )
