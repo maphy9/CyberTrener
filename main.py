@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 from camera import CameraThread
 from pose_detection import PoseDetectionThread
 
@@ -13,6 +14,7 @@ cv2.namedWindow('Body detection', cv2.WINDOW_NORMAL)
 
 front_camera = CameraThread(0, FRONT_WIDTH, FRONT_HEIGHT)
 profile_camera = CameraThread('http://192.168.2.23:8080/video', PROFILE_WIDTH, PROFILE_HEIGHT)
+
 front_pose = PoseDetectionThread()
 profile_pose = PoseDetectionThread()
 
@@ -21,6 +23,9 @@ profile_camera.start()
 front_pose.start()
 profile_pose.start()
 
+fps = 0
+frame_count = 0
+prev_time = time.perf_counter()
 while True:
     front_frame = front_camera.get()
     profile_frame = profile_camera.get()
@@ -39,8 +44,18 @@ while True:
             front_result, BORDER_PADDING, BORDER_PADDING, 0, 0,
             cv2.BORDER_CONSTANT, value=[0, 0, 0]
         )
-
         combined_view = np.hstack((front_result, profile_result))
+
+        frame_count += 1
+        curr_time = time.perf_counter()
+        if curr_time - prev_time > 0.5:
+            fps = frame_count / (curr_time - prev_time)
+            prev_time = curr_time
+            frame_count = 0
+        cv2.putText(combined_view, f"FPS: {fps:.1f}",
+            (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1,
+            (0, 255, 0), 2)
+        
         cv2.imshow('Body detection', combined_view)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
