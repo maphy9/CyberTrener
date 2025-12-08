@@ -1,0 +1,56 @@
+from flask import Flask, render_template
+from flask_socketio import SocketIO
+from threading import Thread, Event
+from camera import CameraStream
+from constants import *
+from processing import process_camera_streams
+
+processing_event = Event()
+
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+@app.route('/')
+def handle_index():
+    return render_template('index.html')
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('start-session')
+def handle_start_session():
+    if not processing_event.is_set():
+        print('Server can handle one session at a time')
+        return
+    print('New session started')
+    processing_event.clear()
+
+    front_camera_stream = CameraStream(0, FRONT_CAMERA_WIDTH, FRONT_CAMERA_HEIGHT).start()
+    profile_camera_stream = CameraStream(
+        PROFILE_CAMERA_URL,
+        PROFILE_CAMERA_WIDTH,
+        PROFILE_CAMERA_HEIGHT
+    ).start()
+
+    Thread(
+        target=process_camera_streams,
+        args=(socketio, front_camera_stream, profile_camera_stream, processing_event),
+        daemon=True
+    ).start()
+
+@socketio.on('end-session')
+def handle_end_session():
+    if processing_event.is_set():
+        print('Tried to end a session that has not started')
+        return
+    processing_event.set()
+    print('Session ended')
+
+if __name__ == '__main__':
+    processing_event.set()
+    socketio.run(app, host='0.0.0.0', port=5000)

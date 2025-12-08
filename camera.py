@@ -13,8 +13,9 @@ class CameraStream:
     
     def start(self):
         self.running = True
-        Thread(target=self._read_video_stream, daemon=True)
-    
+        Thread(target=self._read_video_stream, daemon=True).start()
+        return self
+
     def _read_video_stream(self):
         while self.running:
             ret, frame = self.stream.read()
