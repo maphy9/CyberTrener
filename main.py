@@ -24,22 +24,25 @@ profile_pose.start()
 while True:
     front_frame = front_camera.get()
     profile_frame = profile_camera.get()
-    
-    front_pose.process(front_frame)
-    profile_pose.process(profile_frame)
-    
+
+    if front_frame is not None:
+        front_pose.process(front_frame)
+
+    if profile_frame is not None:
+        profile_pose.process(profile_frame)
+
     front_result = front_pose.get_result()
     profile_result = profile_pose.get_result()
-    
+
     if front_result is not None and profile_result is not None:
         front_result = cv2.copyMakeBorder(
-            front_result, BORDER_PADDING, BORDER_PADDING, 0, 0, 
-            cv2.BORDER_CONSTANT, 
-            value=[0, 0, 0]
+            front_result, BORDER_PADDING, BORDER_PADDING, 0, 0,
+            cv2.BORDER_CONSTANT, value=[0, 0, 0]
         )
+
         combined_view = np.hstack((front_result, profile_result))
         cv2.imshow('Body detection', combined_view)
-    
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
