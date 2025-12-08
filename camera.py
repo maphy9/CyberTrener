@@ -1,39 +1,32 @@
-from threading import Thread
-from queue import Queue
+import time
 import cv2
+from threading import Thread, Lock
 
-class CameraThread(Thread):
-    def __init__(self, camera_source, w=None, h=None):
-        Thread.__init__(self)
-        self.source = camera_source
-        self.w = w
-        self.h = h
-        self.queue = Queue()
-        self.stopped = False
-        self.last_frame = None
-        
-    def run(self):
-        cap = cv2.VideoCapture(self.source)
-        if self.w is not None:
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.w)
-        if self.h is not None:
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.h)
-        while not self.stopped:
-            ret, frame = cap.read()
+class CameraStream:
+    def __init__(self, source, width, height):
+        self.stream = cv2.VideoCapture(source)
+        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, height)
+        self.frame = None
+        self.lock = Lock()
+        self.running = False
+    
+    def start(self):
+        self.running = True
+        Thread(target=self._read_video_stream, daemon=True)
+    
+    def _read_video_stream(self):
+        while self.running:
+            ret, frame = self.stream.read()
             if ret:
-                self.last_frame = frame
-                self.queue.put(frame)
-        cap.release()
+                with self.lock:
+                    self.frame = frame
+            time.sleep(0.01)
     
     def get(self):
-        if self.last_frame is None:
-            self.last_frame = self.queue.get()
-        else:
-            try:
-                self.last_frame = self.queue.get_nowait()
-            except:
-                pass
-        return self.last_frame
-    
+        with self.lock:
+            return self.frame
+        
     def stop(self):
-        self.stopped = True
+        self.running = False
+        self.stream.release()
