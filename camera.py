@@ -6,7 +6,7 @@ class CameraStream:
     def __init__(self, source, width, height):
         self.stream = cv2.VideoCapture(source)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, height)
+        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self.frame = None
         self.lock = Lock()
         self.running = False
