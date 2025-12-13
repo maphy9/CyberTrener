@@ -1,5 +1,4 @@
 import cv2
-import time
 import mediapipe as mp
 import numpy as np
 
@@ -62,6 +61,9 @@ def process_single_frame(frame, pose, curl_state):
     image_rgb.flags.writeable = False
     results = pose.process(image_rgb)
     image_rgb.flags.writeable = True
+
+    if not results.pose_landmarks:
+        return frame
     
     mp_drawing.draw_landmarks(
         frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
@@ -105,12 +107,12 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     front_pose = mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
-        model_complexity=0    
+        model_complexity=1
     )
     profile_pose = mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
-        model_complexity=0    
+        model_complexity=1
     )
 
     curl_state = {
@@ -135,8 +137,6 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
 
         socketio.emit('front-frame', front_img.tobytes())
         socketio.emit('profile-frame', profile_img.tobytes())
-
-        time.sleep(0.033)
 
     front_stream.stop()
     profile_stream.stop()
