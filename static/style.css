@@ -1,10 +1,16 @@
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f0f2f5;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 20px 0;
 }
 
 h1 {
@@ -67,6 +73,7 @@ button {
 }
 
 .video-container {
+  width: 100%;
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
@@ -85,20 +92,9 @@ button {
 }
 
 .cam-box img {
-  width: 100%;
+  height: 640px;
   object-fit: cover;
   display: block;
-}
-
-.cam-label {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 14px;
 }
 
 .placeholder {

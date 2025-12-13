@@ -89,9 +89,9 @@ def process_single_frame(frame, pose, curl_state):
     
     y_offset = 30
     cv2.putText(frame, f'L: {int(left_elbow_angle)}deg {curl_state["left_reps"]}reps', 
-                (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
     cv2.putText(frame, f'R: {int(right_elbow_angle)}deg {curl_state["right_reps"]}reps', 
-                (10, y_offset + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                (10, y_offset + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
     
     if not left_stable:
         cv2.putText(frame, 'L elbow moving!', (10, y_offset + 60), 
