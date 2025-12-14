@@ -9,7 +9,20 @@ landmark_spec = mp_drawing.DrawingSpec(
     circle_radius=1
 )
 
-def process_single_frame(frame, pose):
+def process_front_frame(frame, pose):
+    frame = cv2.flip(frame, 1)
+    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    image_rgb.flags.writeable = False
+    results = pose.process(image_rgb)
+    image_rgb.flags.writeable = True
+    mp_drawing.draw_landmarks(
+        frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+        landmark_drawing_spec=landmark_spec
+    )
+    return frame
+
+
+def process_profile_frame(frame, pose):
     frame = cv2.flip(frame, 1)
     image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     image_rgb.flags.writeable = False
@@ -41,8 +54,8 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
         if front_frame is None or profile_frame is None:
             continue
 
-        front_frame = process_single_frame(front_frame, front_pose)
-        profile_frame = process_single_frame(profile_frame, profile_pose)
+        front_frame = process_front_frame(front_frame, front_pose)
+        profile_frame = process_profile_frame(profile_frame, profile_pose)
 
         _, front_img = cv2.imencode('.jpg', front_frame)
         _, profile_img = cv2.imencode('.jpg', profile_frame)
