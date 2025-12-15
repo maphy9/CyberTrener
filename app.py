@@ -21,7 +21,14 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    global processing_thread
+    if processing_event.is_set():
+        print('Tried to end a session that has not started')
+        return
+    processing_event.set()
+    if processing_thread:
+        processing_thread.join()
+    print('Session ended')
 
 @socketio.on('start-session')
 def handle_start_session():
