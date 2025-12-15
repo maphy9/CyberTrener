@@ -45,7 +45,6 @@ def draw_metrics_profile(frame, metrics, x=10, y=30, font_scale=0.6):
         f"Right Arm: {metrics['right_angle']}deg ({metrics['right_phase']})",
         f"Right Reps: {metrics['right_reps']} [{uncontrolled_r}]",
         f"Trunk: {metrics['trunk_angle']}deg",
-        f"R Elbow Dist: {metrics['right_elbow_dist']}"
     ]
     
     for line in lines:

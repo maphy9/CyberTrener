@@ -77,37 +77,47 @@ def detect_phase(angle, flex_threshold=80, extend_threshold=120):
     return 'middle'
 
 
+import numpy as np
+
 def assess_motion_control(angle_timestamp_history, default_dt=1/30):
-    if not angle_timestamp_history or len(angle_timestamp_history) < 3:
+    n = len(angle_timestamp_history)
+    if n < 3:
         return {'max_vel': 0, 'avg_vel': 0, 'max_jerk': 0, 'uncontrolled': 0}
     
     times, angles = zip(*angle_timestamp_history)
+    angles = np.array(angles, dtype=np.float64)
     
     if any(t is None for t in times):
-        dt = default_dt
-        times = [i * dt for i in range(len(angles))]
+        times = np.arange(n) * default_dt
+    else:
+        times = np.array(times, dtype=np.float64)
     
-    velocities = []
-    for i in range(1, len(angles)):
-        dt = times[i] - times[i-1] if (times[i] - times[i-1]) > 0 else default_dt
-        velocities.append((angles[i] - angles[i-1]) / dt)
+    if n >= 3:
+        angles = np.convolve(angles, np.ones(3)/3, mode='valid')
+        times = times[1:-1]
     
-    if not velocities:
+    dt = np.diff(times)
+    dt = np.where(dt > 0, dt, default_dt)
+    velocities = np.diff(angles) / dt
+    
+    if len(velocities) == 0:
         return {'max_vel': 0, 'avg_vel': 0, 'max_jerk': 0, 'uncontrolled': 0}
     
-    jerks = []
-    for i in range(1, len(velocities)):
-        dt = times[i+1] - times[i] if (times[i+1] - times[i]) > 0 else default_dt
-        jerks.append((velocities[i] - velocities[i-1]) / dt)
+    abs_velocities = np.abs(velocities)
+    max_velocity = float(np.max(abs_velocities))
+    avg_velocity = float(np.mean(abs_velocities))
     
-    max_velocity = max(abs(v) for v in velocities)
-    avg_velocity = sum(abs(v) for v in velocities) / len(velocities)
-    max_jerk = max(abs(j) for j in jerks) if jerks else 0
+    if len(velocities) < 2:
+        return {'max_vel': max_velocity, 'avg_vel': avg_velocity, 'max_jerk': 0, 'uncontrolled': 0}
+    
+    jerks = np.diff(velocities) / dt[1:]
+    max_jerk = float(np.max(np.abs(jerks)))
+    
     uncontrolled = 1 if (max_velocity > 800 or max_jerk > 2000) else 0
     
     return {
-        'max_vel': max_velocity, 
-        'avg_vel': avg_velocity, 
+        'max_vel': max_velocity,
+        'avg_vel': avg_velocity,
         'max_jerk': max_jerk,
         'uncontrolled': uncontrolled
     }

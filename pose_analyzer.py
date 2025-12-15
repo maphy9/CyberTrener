@@ -36,7 +36,6 @@ class FrontAnalyzer:
             return
             
         current_time = time.time()
-        dt = current_time - self.last_time
         self.last_time = current_time
             
         try:
@@ -54,8 +53,8 @@ class FrontAnalyzer:
         right_angle_raw = calculate_angle(right_shoulder, right_elbow, right_wrist)
         left_angle_raw = calculate_angle(left_shoulder, left_elbow, left_wrist)
         
-        self.right_angle_smooth = smooth_value(right_angle_raw, self.right_angle_smooth, 0.25)
-        self.left_angle_smooth = smooth_value(left_angle_raw, self.left_angle_smooth, 0.25)
+        self.right_angle_smooth = smooth_value(right_angle_raw, self.right_angle_smooth, 0.6)
+        self.left_angle_smooth = smooth_value(left_angle_raw, self.left_angle_smooth, 0.6)
         
         self.right_angle_history_timed.append((current_time, self.right_angle_smooth))
         self.left_angle_history_timed.append((current_time, self.left_angle_smooth))
@@ -63,8 +62,8 @@ class FrontAnalyzer:
         right_dist_raw = calculate_elbow_to_torso_distance(right_elbow, right_shoulder, left_shoulder)
         left_dist_raw = calculate_elbow_to_torso_distance(left_elbow, right_shoulder, left_shoulder)
         
-        self.right_elbow_dist_smooth = smooth_value(right_dist_raw, self.right_elbow_dist_smooth, 0.25)
-        self.left_elbow_dist_smooth = smooth_value(left_dist_raw, self.left_elbow_dist_smooth, 0.25)
+        self.right_elbow_dist_smooth = smooth_value(right_dist_raw, self.right_elbow_dist_smooth, 0.6)
+        self.left_elbow_dist_smooth = smooth_value(left_dist_raw, self.left_elbow_dist_smooth, 0.6)
         
         shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
                         (right_shoulder[1] + left_shoulder[1]) / 2,
@@ -74,10 +73,10 @@ class FrontAnalyzer:
                    (right_hip[2] + left_hip[2]) / 2)
         
         trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
-        self.trunk_angle = smooth_value(trunk_angle_raw, self.trunk_angle, 0.25)
+        self.trunk_angle = smooth_value(trunk_angle_raw, self.trunk_angle, 0.3)
         
-        self.right_phase = detect_phase(self.right_angle_smooth)
-        self.left_phase = detect_phase(self.left_angle_smooth)
+        self.right_phase = detect_phase(self.right_angle_smooth, flex_threshold=30, extend_threshold=100)
+        self.left_phase = detect_phase(self.left_angle_smooth, flex_threshold=30, extend_threshold=100)
         
         if self.right_phase == 'flexed':
             self.right_rep_flag = True
@@ -118,7 +117,6 @@ class ProfileAnalyzer:
         self.right_angle_history_timed = deque(maxlen=max_history)
         self.right_angle_smooth = None
         self.trunk_angle_smooth = None
-        self.right_elbow_dist_smooth = None
         
         self.right_reps = 0
         self.right_phase = 'unknown'
@@ -133,7 +131,6 @@ class ProfileAnalyzer:
             return
             
         current_time = time.time()
-        dt = current_time - self.last_time
         self.last_time = current_time
             
         try:
@@ -147,11 +144,8 @@ class ProfileAnalyzer:
             return
         
         right_angle_raw = calculate_angle(right_shoulder, right_elbow, right_wrist)
-        self.right_angle_smooth = smooth_value(right_angle_raw, self.right_angle_smooth, 0.25)
+        self.right_angle_smooth = smooth_value(right_angle_raw, self.right_angle_smooth, 0.6)
         self.right_angle_history_timed.append((current_time, self.right_angle_smooth))
-        
-        right_dist_raw = calculate_elbow_to_torso_distance(right_elbow, right_shoulder, left_shoulder)
-        self.right_elbow_dist_smooth = smooth_value(right_dist_raw, self.right_elbow_dist_smooth, 0.25)
         
         shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
                         (right_shoulder[1] + left_shoulder[1]) / 2,
@@ -161,9 +155,9 @@ class ProfileAnalyzer:
                    (right_hip[2] + left_hip[2]) / 2)
         
         trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
-        self.trunk_angle = smooth_value(trunk_angle_raw, self.trunk_angle, 0.25)
+        self.trunk_angle = smooth_value(trunk_angle_raw, self.trunk_angle, 0.4)
         
-        self.right_phase = detect_phase(self.right_angle_smooth)
+        self.right_phase = detect_phase(self.right_angle_smooth, flex_threshold=70, extend_threshold=120)
         
         if self.right_phase == 'flexed':
             self.right_rep_flag = True
@@ -180,7 +174,6 @@ class ProfileAnalyzer:
             'right_reps': self.right_reps,
             'right_phase': self.right_phase,
             'trunk_angle': round(self.trunk_angle or 0, 1),
-            'right_elbow_dist': round(self.right_elbow_dist_smooth or 0, 3),
             'right_uncontrolled': self.right_motion.get('uncontrolled', 0),
         }
 
