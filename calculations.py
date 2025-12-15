@@ -23,8 +23,8 @@ def to_numpy(point):
 
 
 def calculate_angle(point_a, point_b, point_c):
-    vector_ba = to_numpy(point_a) - to_numpy(point_b)
-    vector_bc = to_numpy(point_c) - to_numpy(point_b)
+    vector_ba = np.array([point_a[0] - point_b[0], point_a[1] - point_b[1]], dtype=float)
+    vector_bc = np.array([point_c[0] - point_b[0], point_c[1] - point_b[1]], dtype=float)
     length_ba = np.linalg.norm(vector_ba)
     length_bc = np.linalg.norm(vector_bc)
     if length_ba == 0 or length_bc == 0:
@@ -108,6 +108,6 @@ def assess_motion_control(angle_timestamp_history, default_dt=1/30):
     return {
         'max_vel': max_velocity, 
         'avg_vel': avg_velocity, 
-        'max_jerk': max_jerk, 
+        'max_jerk': max_jerk,
         'uncontrolled': uncontrolled
     }
