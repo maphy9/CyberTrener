@@ -66,16 +66,6 @@ class FrontAnalyzer:
         self.right_elbow_dist_smooth = smooth_value(right_dist_raw, self.right_elbow_dist_smooth, FRONT_ELBOW_DIST_SMOOTHING)
         self.left_elbow_dist_smooth = smooth_value(left_dist_raw, self.left_elbow_dist_smooth, FRONT_ELBOW_DIST_SMOOTHING)
         
-        shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
-                        (right_shoulder[1] + left_shoulder[1]) / 2,
-                        (right_shoulder[2] + left_shoulder[2]) / 2)
-        hip_mid = ((right_hip[0] + left_hip[0]) / 2,
-                   (right_hip[1] + left_hip[1]) / 2,
-                   (right_hip[2] + left_hip[2]) / 2)
-        
-        trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
-        self.trunk_angle = smooth_value(trunk_angle_raw, self.trunk_angle, FRONT_TRUNK_SMOOTHING)
-        
         right_phase_detected = detect_phase(self.right_angle_smooth, flex_threshold=FRONT_FLEX_THRESHOLD, extend_threshold=FRONT_EXTEND_THRESHOLD)
         left_phase_detected = detect_phase(self.left_angle_smooth, flex_threshold=FRONT_FLEX_THRESHOLD, extend_threshold=FRONT_EXTEND_THRESHOLD)
         
@@ -119,7 +109,6 @@ class FrontAnalyzer:
             'left_reps': self.left_reps,
             'right_phase': self.right_phase,
             'left_phase': self.left_phase,
-            'trunk_angle': round(self.trunk_angle or 0, 1),
             'right_elbow_dist': round(self.right_elbow_dist_smooth or 0, 3),
             'left_elbow_dist': round(self.left_elbow_dist_smooth or 0, 3),
         }

@@ -21,7 +21,6 @@ def draw_metrics_front(frame, metrics, x=10, y=30, font_scale=0.6):
         f"Right Reps: {metrics['right_reps']}",
         f"Left Arm: {metrics['left_angle']}deg ({metrics['left_phase']})",
         f"Left Reps: {metrics['left_reps']}",
-        f"Trunk: {metrics['trunk_angle']}deg",
         f"R Elbow Dist: {metrics['right_elbow_dist']}",
         f"L Elbow Dist: {metrics['left_elbow_dist']}"
     ]

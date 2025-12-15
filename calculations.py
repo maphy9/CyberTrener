@@ -34,9 +34,12 @@ def calculate_angle(point_a, point_b, point_c):
     return math.degrees(math.acos(cos_angle))
 
 
+
 def calculate_trunk_angle(shoulder, hip):
-    spine_vector = to_numpy(shoulder) - to_numpy(hip)
-    vertical_axis = np.array([0, 1, 0])
+    shoulder = to_numpy(shoulder)
+    hip = to_numpy(hip)
+    spine_vector = np.array([shoulder[0] - hip[0], shoulder[1] - hip[1]], dtype=float)
+    vertical_axis = np.array([0, 1])
     spine_length = np.linalg.norm(spine_vector)
     if spine_length == 0:
         return 0
