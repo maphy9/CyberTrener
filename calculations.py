@@ -69,50 +69,12 @@ def smooth_value(current_value, previous_value, smoothing_factor=0.25):
     return smoothing_factor * current_value + (1 - smoothing_factor) * previous_value
 
 
-def calculate_moving_average(history):
-    if not history:
-        return 0
-    return sum(history) / len(history)
-
-
-def detect_reps_and_phase(angle_history, flex_threshold=60, extend_threshold=120):
-    if not angle_history:
-        return 0, 'unknown'
-    
-    reps = 0
-    phase = 'unknown'
-    angles = list(angle_history)
-    
-    if len(angles) < 3:
-        current_angle = angles[-1]
-        if current_angle <= flex_threshold:
-            phase = 'flexed'
-        elif current_angle >= extend_threshold:
-            phase = 'extended'
-        else:
-            phase = 'middle'
-        return 0, phase
-
-    state = None
-    for angle in angles:
-        if angle <= flex_threshold:
-            if state == 'extended':
-                reps += 1
-            state = 'flexed'
-        elif angle >= extend_threshold:
-            state = 'extended'
-        else:
-            state = 'middle'
-    
-    current_angle = angles[-1]
-    if current_angle <= flex_threshold:
-        phase = 'flexed'
-    elif current_angle >= extend_threshold:
-        phase = 'extended'
-    else:
-        phase = 'middle'
-    
-    return reps, phase
+def detect_phase(angle, flex_threshold=80, extend_threshold=120):
+    if angle <= flex_threshold:
+        return 'flexed'
+    elif angle >= extend_threshold:
+        return 'extended'
+    return 'middle'
 
 
 def assess_motion_control(angle_timestamp_history, default_dt=1/30):
@@ -149,21 +111,3 @@ def assess_motion_control(angle_timestamp_history, default_dt=1/30):
         'max_jerk': max_jerk, 
         'uncontrolled': uncontrolled
     }
-
-
-def merge_camera_metrics(profile_metrics, frontal_metrics):
-    merged = {}
-    merged.update(profile_metrics or {})
-    
-    if frontal_metrics is None:
-        return merged
-    
-    if 'elbow_to_torso' in frontal_metrics:
-        merged['elbow_to_torso'] = frontal_metrics['elbow_to_torso']
-    
-    merged['confidence'] = min(
-        profile_metrics.get('confidence', 1) if profile_metrics else 1,
-        frontal_metrics.get('confidence', 1)
-    )
-    
-    return merged
