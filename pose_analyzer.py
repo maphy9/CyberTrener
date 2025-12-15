@@ -23,8 +23,8 @@ class FrontAnalyzer:
         self.left_reps = 0
         self.right_phase = 'unknown'
         self.left_phase = 'unknown'
-        self.right_prev_phase = None
-        self.left_prev_phase = None
+        self.right_rep_flag = False
+        self.left_rep_flag = False
         self.trunk_angle = 0
         self.right_motion = {'max_vel': 0, 'avg_vel': 0, 'uncontrolled': 0}
         self.left_motion = {'max_vel': 0, 'avg_vel': 0, 'uncontrolled': 0}
@@ -79,13 +79,17 @@ class FrontAnalyzer:
         self.right_phase = detect_phase(self.right_angle_smooth)
         self.left_phase = detect_phase(self.left_angle_smooth)
         
-        if self.right_prev_phase == 'middle' and self.right_phase == 'flexed':
+        if self.right_phase == 'flexed':
+            self.right_rep_flag = True
+        elif self.right_phase == 'extended' and self.right_rep_flag:
             self.right_reps += 1
-        self.right_prev_phase = self.right_phase
+            self.right_rep_flag = False
         
-        if self.left_prev_phase == 'middle' and self.left_phase == 'flexed':
+        if self.left_phase == 'flexed':
+            self.left_rep_flag = True
+        elif self.left_phase == 'extended' and self.left_rep_flag:
             self.left_reps += 1
-        self.left_prev_phase = self.left_phase
+            self.left_rep_flag = False
         
         if len(self.right_angle_history_timed) >= 3:
             self.right_motion = assess_motion_control(self.right_angle_history_timed)
@@ -118,7 +122,7 @@ class ProfileAnalyzer:
         
         self.right_reps = 0
         self.right_phase = 'unknown'
-        self.right_prev_phase = None
+        self.right_rep_flag = False
         self.trunk_angle = 0
         self.right_motion = {'max_vel': 0, 'avg_vel': 0, 'uncontrolled': 0}
         self.last_time = time.time()
@@ -161,9 +165,11 @@ class ProfileAnalyzer:
         
         self.right_phase = detect_phase(self.right_angle_smooth)
         
-        if self.right_prev_phase == 'middle' and self.right_phase == 'flexed':
+        if self.right_phase == 'flexed':
+            self.right_rep_flag = True
+        elif self.right_phase == 'extended' and self.right_rep_flag:
             self.right_reps += 1
-        self.right_prev_phase = self.right_phase
+            self.right_rep_flag = False
         
         if len(self.right_angle_history_timed) >= 3:
             self.right_motion = assess_motion_control(self.right_angle_history_timed)
