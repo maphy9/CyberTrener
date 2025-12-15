@@ -72,6 +72,35 @@ button {
   color: #ffffff;
 }
 
+.metrics-panel {
+  margin-bottom: 20px;
+  padding: 20px 30px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  gap: 40px;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.metric-label {
+  color: #b0b0b0;
+  font-size: 16px;
+}
+
+.metric-value {
+  color: #22c55e;
+  font-size: 32px;
+  font-weight: bold;
+  min-width: 50px;
+  text-align: center;
+}
+
 .video-container {
   width: 100%;
   display: flex;

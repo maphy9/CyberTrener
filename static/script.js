@@ -5,6 +5,8 @@ const btnStop = document.getElementById("btn-stop");
 const statusSpan = document.getElementById("status");
 const frontImg = document.getElementById("front-image");
 const profileImg = document.getElementById("profile-image");
+const rightRepsSpan = document.getElementById("right-reps");
+const leftRepsSpan = document.getElementById("left-reps");
 
 btnStart.addEventListener("click", () => {
   socket.emit("start-session");
@@ -37,6 +39,15 @@ socket.on("profile-frame", (data) => {
   updateImage(profileImg, data);
 });
 
+socket.on("metrics", (data) => {
+  rightRepsSpan.innerText = data.right_reps;
+  leftRepsSpan.innerText = data.left_reps;
+
+  if (data.errors && data.errors.length > 0) {
+    console.log("Errors detected:", data.errors);
+  }
+});
+
 function resetUI() {
   btnStart.disabled = false;
   btnStop.disabled = true;
@@ -44,6 +55,8 @@ function resetUI() {
   statusSpan.style.color = "#b0b0b0";
   frontImg.src = "";
   profileImg.src = "";
+  rightRepsSpan.innerText = "0";
+  leftRepsSpan.innerText = "0";
 }
 
 function updateImage(imgElement, data) {
