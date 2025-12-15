@@ -16,14 +16,11 @@ def draw_metrics_front(frame, metrics, x=10, y=30, font_scale=0.6):
     color = (0, 0, 0)
     y_offset = y
     
-    uncontrolled_r = "UNCONTROLLED" if metrics['right_uncontrolled'] else "OK"
-    uncontrolled_l = "UNCONTROLLED" if metrics['left_uncontrolled'] else "OK"
-    
     lines = [
         f"Right Arm: {metrics['right_angle']}deg ({metrics['right_phase']})",
-        f"Right Reps: {metrics['right_reps']} [{uncontrolled_r}]",
+        f"Right Reps: {metrics['right_reps']}",
         f"Left Arm: {metrics['left_angle']}deg ({metrics['left_phase']})",
-        f"Left Reps: {metrics['left_reps']} [{uncontrolled_l}]",
+        f"Left Reps: {metrics['left_reps']}",
         f"Trunk: {metrics['trunk_angle']}deg",
         f"R Elbow Dist: {metrics['right_elbow_dist']}",
         f"L Elbow Dist: {metrics['left_elbow_dist']}"
@@ -39,11 +36,9 @@ def draw_metrics_profile(frame, metrics, x=10, y=30, font_scale=0.6):
     color = (0, 0, 0)
     y_offset = y
     
-    uncontrolled_r = "UNCONTROLLED" if metrics['right_uncontrolled'] else "OK"
-    
     lines = [
         f"Right Arm: {metrics['right_angle']}deg ({metrics['right_phase']})",
-        f"Right Reps: {metrics['right_reps']} [{uncontrolled_r}]",
+        f"Right Reps: {metrics['right_reps']}",
         f"Trunk: {metrics['trunk_angle']}deg",
     ]
     
