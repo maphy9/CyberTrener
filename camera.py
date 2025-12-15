@@ -10,10 +10,14 @@ class CameraStream:
         self.frame = None
         self.lock = Lock()
         self.running = False
+        self.thread = None
+        self.is_connected = True
+        self.consecutive_failures = 0
     
     def start(self):
         self.running = True
-        Thread(target=self._read_video_stream, daemon=True).start()
+        self.thread = Thread(target=self._read_video_stream, daemon=True)
+        self.thread.start()
         return self
 
     def _read_video_stream(self):
@@ -22,6 +26,12 @@ class CameraStream:
             if ret:
                 with self.lock:
                     self.frame = frame
+                    self.consecutive_failures = 0
+            else:
+                self.consecutive_failures += 1
+                if self.consecutive_failures > 30:
+                    self.is_connected = False
+                    self.running = False
             time.sleep(0.01)
     
     def get(self):
@@ -30,4 +40,6 @@ class CameraStream:
         
     def stop(self):
         self.running = False
+        if self.thread:
+            self.thread.join()
         self.stream.release()

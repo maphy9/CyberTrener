@@ -6,6 +6,7 @@ from constants import *
 from processing import process_camera_streams
 
 processing_event = Event()
+processing_thread = None
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -20,10 +21,18 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    global processing_thread
+    if processing_event.is_set():
+        print('Tried to end a session that has not started')
+        return
+    processing_event.set()
+    if processing_thread:
+        processing_thread.join()
+    print('Session ended')
 
 @socketio.on('start-session')
 def handle_start_session():
+    global processing_thread
     if not processing_event.is_set():
         print('Server can handle one session at a time')
         return
@@ -37,18 +46,22 @@ def handle_start_session():
         PROFILE_CAMERA_HEIGHT
     ).start()
 
-    Thread(
+    processing_thread = Thread(
         target=process_camera_streams,
         args=(socketio, front_camera_stream, profile_camera_stream, processing_event),
         daemon=True
-    ).start()
+    )
+    processing_thread.start()
 
 @socketio.on('end-session')
 def handle_end_session():
+    global processing_thread
     if processing_event.is_set():
         print('Tried to end a session that has not started')
         return
     processing_event.set()
+    if processing_thread:
+        processing_thread.join()
     print('Session ended')
 
 if __name__ == '__main__':

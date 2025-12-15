@@ -20,12 +20,12 @@ btnStop.addEventListener("click", () => {
 
 socket.on("connect", () => {
   statusSpan.innerText = "Connected to Server";
-  statusSpan.style.color = "green";
+  statusSpan.style.color = "#22c55e";
 });
 
 socket.on("disconnect", () => {
   statusSpan.innerText = "Disconnected";
-  statusSpan.style.color = "red";
+  statusSpan.style.color = "#ef4444";
   resetUI();
 });
 
@@ -41,7 +41,7 @@ function resetUI() {
   btnStart.disabled = false;
   btnStop.disabled = true;
   statusSpan.innerText = "Session Ended";
-  statusSpan.style.color = "#666";
+  statusSpan.style.color = "#b0b0b0";
   frontImg.src = "";
   profileImg.src = "";
 }
