@@ -16,7 +16,6 @@ const statusDotLaptop = document.getElementById("status-dot-laptop");
 const statusDotPhone = document.getElementById("status-dot-phone");
 const placeholderLaptop = document.getElementById("placeholder-laptop");
 const placeholderPhone = document.getElementById("placeholder-phone");
-const tipsMessage = document.getElementById("tips-message");
 
 let prevRightReps = 0;
 let prevLeftReps = 0;
@@ -195,11 +194,6 @@ socket.on("metrics", (data) => {
         if (tipsMessage) tipsMessage.textContent = error;
       }
     });
-  } else {
-    if (tipsMessage && prevErrors.size > 0) {
-      tipsMessage.textContent = "Świetna forma! Tak trzymaj!";
-      prevErrors.clear();
-    }
   }
 });
 
