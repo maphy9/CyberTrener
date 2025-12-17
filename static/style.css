@@ -284,7 +284,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--secondary);
+  background: var(--bad);
   animation: pulse 2s infinite;
 }
 
