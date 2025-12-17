@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PROJEKT CyberTrener - Trening</title>
+    <link rel="stylesheet" href="static/style.css" />
+  </head>
+  <body>
+    <div class="training-page" id="trainingPage" style="display: flex">
+      <header class="training-header">
+        <a href="index.html" class="back-btn">← Powrót</a>
+        <h2 class="exercise-name">Podnoszenie sztangi</h2>
+        <div class="timer" id="timer">00:00</div>
+      </header>
+
+      <div class="training-content">
+        <div class="camera-feed camera-laptop">
+          <div class="camera-header">
+            <span class="camera-label"> 💻 Kamera laptopa </span>
+            <span class="camera-status">
+              <span class="status-dot"></span>
+              Połączono
+            </span>
+          </div>
+          <div class="camera-view">
+            <div class="skeleton-preview">
+              <div class="camera-placeholder">
+                <div class="camera-placeholder-icon">📹</div>
+                <p>Widok z przodu</p>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem">
+                  Wykrywanie sylwetki aktywne
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="camera-feed camera-phone">
+          <div class="camera-header">
+            <span class="camera-label"> 📱 Telefon </span>
+            <span class="camera-status">
+              <span class="status-dot"></span>
+              Połączono
+            </span>
+          </div>
+          <div class="camera-view">
+            <div class="camera-placeholder">
+              <div class="camera-placeholder-icon">📹</div>
+              <p>Widok z boku</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-panel">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Powtórzenia</span>
+              <span class="stat-value primary">12</span>
+              <span class="stat-detail">Cel: 15</span>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-label">Seria</span>
+              <span class="stat-value secondary">2 / 4</span>
+              <span class="stat-detail">Przerwa za 3</span>
+            </div>
+
+            <div class="history-card">
+              <div class="history-label">Historia</div>
+              <div class="history-dots">
+                <span class="history-dot dot-good">1</span>
+                <span class="history-dot dot-great">2</span>
+                <span class="history-dot dot-perfect">3</span>
+                <span class="history-dot dot-perfect">4</span>
+                <span class="history-dot dot-great">5</span>
+                <span class="history-dot dot-bad">6</span>
+                <span class="history-dot dot-great">7</span>
+                <span class="history-dot dot-perfect">8</span>
+              </div>
+            </div>
+
+            <div class="rating-card">
+              <div class="rating-label">Ostatnie wykonanie</div>
+              <div class="rating-display">
+                <span class="rating-badge rating-great">Wyśmienicie</span>
+                <span class="rating-message">Świetna pozycja!</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-label">Seria poprawnych</span>
+              <span class="stat-value secondary">🔥 7</span>
+              <span class="stat-detail">Rekord: 12</span>
+            </div>
+
+            <div class="stat-card">
+              <span class="stat-label">Kalorie</span>
+              <span class="stat-value primary">~48</span>
+              <span class="stat-detail">kcal</span>
+            </div>
+
+            <div class="tips-card">
+              <div class="tips-header">
+                <span class="tips-icon">🤖</span>
+                <span class="tips-label">Wskazówka AI</span>
+              </div>
+              <p class="tips-message">Pamiętaj o utrzymaniu prostych pleców!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="static/script.js"></script>
+  </body>
+</html>

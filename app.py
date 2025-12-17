@@ -15,6 +15,10 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 def handle_index():
     return render_template('index.html')
 
+@app.route('/training')
+def handle_training():
+    return render_template('training.html')
+
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
