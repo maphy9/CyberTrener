@@ -16,6 +16,7 @@ const statusDotFront = document.getElementById("status-dot-front");
 const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
+let skeletons = document.getElementsByClassName("skeleton-preview");
 
 let prevRightReps = 0;
 let prevLeftReps = 0;
@@ -240,4 +241,9 @@ function updateImage(imgElement, data, placeholder) {
 
   imgElement.style.display = "block";
   imgElement.src = url;
+
+  for (const skeleton of skeletons) {
+    skeleton.remove();
+  }
+  skeletons = [];
 }
