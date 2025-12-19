@@ -230,7 +230,6 @@ body {
   grid-template-columns: 1fr 340px;
   gap: 1.5rem;
   min-height: 0;
-  overflow: hidden;
 }
 
 .main-column {
@@ -248,7 +247,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.camera-laptop {
+.camera-front {
   flex: 1;
   height: 100%;
 }
@@ -260,7 +259,7 @@ body {
   height: 100%;
 }
 
-.camera-phone {
+.camera-profile {
   flex: 2;
   width: 100%;
   max-height: 74%;
@@ -320,7 +319,6 @@ body {
   background: linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
   background-size: 30px 30px;
-  overflow: hidden;
 }
 
 .camera-placeholder {
@@ -437,7 +435,7 @@ body {
     height: auto;
   }
 
-  .camera-phone {
+  .camera-profile {
     max-height: 300px;
   }
 

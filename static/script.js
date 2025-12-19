@@ -10,12 +10,12 @@ const frontImg = document.getElementById("front-image");
 const profileImg = document.getElementById("profile-image");
 const rightRepsSpan = document.getElementById("right-reps");
 const leftRepsSpan = document.getElementById("left-reps");
-const statusLaptop = document.getElementById("status-laptop");
-const statusPhone = document.getElementById("status-phone");
-const statusDotLaptop = document.getElementById("status-dot-laptop");
-const statusDotPhone = document.getElementById("status-dot-phone");
-const placeholderLaptop = document.getElementById("placeholder-laptop");
-const placeholderPhone = document.getElementById("placeholder-phone");
+const statusFront = document.getElementById("status-front");
+const statusProfile = document.getElementById("status-profile");
+const statusDotFront = document.getElementById("status-dot-front");
+const statusDotProfile = document.getElementById("status-dot-profile");
+const placeholderFront = document.getElementById("placeholder-front");
+const placeholderProfile = document.getElementById("placeholder-profile");
 
 let prevRightReps = 0;
 let prevLeftReps = 0;
@@ -133,26 +133,26 @@ if (btnStop) {
     resetUI();
     stopTimer();
     setTimeout(() => {
-      if (statusLaptop) {
-        statusLaptop.textContent = "Rozłączono";
-        statusDotLaptop.style.background = "var(--bad)";
+      if (statusFront) {
+        statusFront.textContent = "Roz\u0142ączono";
+        statusDotFront.style.background = "var(--bad)";
       }
-      if (statusPhone) {
-        statusPhone.textContent = "Rozłączono";
-        statusDotPhone.style.background = "var(--bad)";
+      if (statusProfile) {
+        statusProfile.textContent = "Roz\u0142ączono";
+        statusDotProfile.style.background = "var(--bad)";
       }
     }, 200);
   });
 }
 
 function changeStateToConnected() {
-  if (statusLaptop) {
-    statusLaptop.textContent = "Połączono";
-    statusDotLaptop.style.background = "var(--perfect)";
+  if (statusFront) {
+    statusFront.textContent = "Po\u0142ączono";
+    statusDotFront.style.background = "var(--perfect)";
   }
-  if (statusPhone) {
-    statusPhone.textContent = "Połączono";
-    statusDotPhone.style.background = "var(--perfect)";
+  if (statusProfile) {
+    statusProfile.textContent = "Po\u0142ączono";
+    statusDotProfile.style.background = "var(--perfect)";
   }
 }
 
@@ -161,7 +161,7 @@ socket.on("front-frame", (data) => {
     startTimer();
   }
   changeStateToConnected();
-  updateImage(frontImg, data, placeholderLaptop);
+  updateImage(frontImg, data, placeholderFront);
 });
 
 socket.on("profile-frame", (data) => {
@@ -169,7 +169,7 @@ socket.on("profile-frame", (data) => {
     startTimer();
   }
   changeStateToConnected();
-  updateImage(profileImg, data, placeholderPhone);
+  updateImage(profileImg, data, placeholderProfile);
 });
 
 socket.on("metrics", (data) => {
@@ -210,8 +210,8 @@ function resetUI() {
     profileImg.src = "";
   }
 
-  if (placeholderLaptop) placeholderLaptop.style.display = "block";
-  if (placeholderPhone) placeholderPhone.style.display = "block";
+  if (placeholderFront) placeholderFront.style.display = "block";
+  if (placeholderProfile) placeholderProfile.style.display = "block";
 
   if (rightRepsSpan) rightRepsSpan.textContent = "0";
   if (leftRepsSpan) leftRepsSpan.textContent = "0";
