@@ -331,27 +331,14 @@ body {
   opacity: 0.5;
 }
 
-.skeleton-preview {
-  position: absolute;
-  width: 60%;
-  height: 70%;
-  border: 2px dashed rgba(0, 212, 255, 0.2);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 #front-image {
-  height: 100%;
   width: 100%;
   object-fit: contain;
   display: none;
 }
 
 #profile-image {
-  max-height: 100%;
-  max-width: 100%;
+  width: 100%;
   object-fit: contain;
   display: none;
 }

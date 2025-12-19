@@ -1,6 +1,7 @@
 let timerInterval;
 let seconds = 0;
 let timerStarted = false;
+let pressedStop = true;
 
 const socket = io("http://localhost:5000");
 
@@ -16,7 +17,6 @@ const statusDotFront = document.getElementById("status-dot-front");
 const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
-let skeletons = document.getElementsByClassName("skeleton-preview");
 
 let prevRightReps = 0;
 let prevLeftReps = 0;
@@ -85,20 +85,24 @@ function queueSound(sound) {
 }
 
 function startTimer() {
-  if (timerStarted) return;
+  if (timerStarted) {
+    return;
+  }
   timerStarted = true;
   seconds = 0;
   updateTimerDisplay();
   timerInterval = setInterval(() => {
+    if (pressedStop) {
+      return;
+    }
     seconds++;
     updateTimerDisplay();
   }, 1000);
 }
 
 function stopTimer() {
+  timerStarted = false;
   clearInterval(timerInterval);
-  updateTimerDisplay();
-  setTimeout(() => (timerStarted = false), 200);
 }
 
 function updateTimerDisplay() {
@@ -112,63 +116,48 @@ function updateTimerDisplay() {
   }
 }
 
-if (document.getElementById("timer")) {
-  updateTimerDisplay();
-}
+btnStart.addEventListener("click", () => {
+  pressedStop = false;
+  socket.emit("start-session");
+  btnStart.disabled = true;
+  btnStop.disabled = false;
+  prevRightReps = 0;
+  prevLeftReps = 0;
+  prevErrors.clear();
+});
 
-if (btnStart) {
-  btnStart.addEventListener("click", () => {
-    socket.emit("start-session");
-    btnStart.disabled = true;
-    btnStop.disabled = false;
-    prevRightReps = 0;
-    prevLeftReps = 0;
-    prevErrors.clear();
-    tipsMessage.textContent = "Czekam na pierwsze klatki...";
-  });
-}
-
-if (btnStop) {
-  btnStop.addEventListener("click", () => {
-    socket.emit("end-session");
-    resetUI();
-    stopTimer();
-    setTimeout(() => {
-      if (statusFront) {
-        statusFront.textContent = "Roz\u0142ączono";
-        statusDotFront.style.background = "var(--bad)";
-      }
-      if (statusProfile) {
-        statusProfile.textContent = "Roz\u0142ączono";
-        statusDotProfile.style.background = "var(--bad)";
-      }
-    }, 200);
-  });
-}
+btnStop.addEventListener("click", () => {
+  pressedStop = true;
+  socket.emit("end-session");
+  resetUI();
+  stopTimer();
+  statusFront.textContent = "Rozłączono";
+  statusDotFront.style.background = "var(--bad)";
+  statusProfile.textContent = "Rozłączono";
+  statusDotProfile.style.background = "var(--bad)";
+});
 
 function changeStateToConnected() {
-  if (statusFront) {
-    statusFront.textContent = "Po\u0142ączono";
-    statusDotFront.style.background = "var(--perfect)";
-  }
-  if (statusProfile) {
-    statusProfile.textContent = "Po\u0142ączono";
-    statusDotProfile.style.background = "var(--perfect)";
-  }
+  statusFront.textContent = "Połączono";
+  statusDotFront.style.background = "var(--perfect)";
+  statusProfile.textContent = "Połączono";
+  statusDotProfile.style.background = "var(--perfect)";
 }
 
 socket.on("front-frame", (data) => {
-  if (!timerStarted) {
-    startTimer();
+  if (pressedStop) {
+    return;
   }
+  startTimer();
   changeStateToConnected();
   updateImage(frontImg, data, placeholderFront);
 });
 
 socket.on("profile-frame", (data) => {
-  if (!timerStarted) {
-    startTimer();
+  if (pressedStop) {
+    return;
   }
+  startTimer();
   changeStateToConnected();
   updateImage(profileImg, data, placeholderProfile);
 });
@@ -192,7 +181,6 @@ socket.on("metrics", (data) => {
       if (!prevErrors.has(error)) {
         queueSound({ type: "speech", text: error });
         prevErrors.add(error);
-        if (tipsMessage) tipsMessage.textContent = error;
       }
     });
   }
@@ -217,8 +205,6 @@ function resetUI() {
   if (rightRepsSpan) rightRepsSpan.textContent = "0";
   if (leftRepsSpan) leftRepsSpan.textContent = "0";
 
-  if (tipsMessage) tipsMessage.textContent = "Gotowy do rozpoczęcia!";
-
   prevRightReps = 0;
   prevLeftReps = 0;
   prevErrors.clear();
@@ -241,9 +227,4 @@ function updateImage(imgElement, data, placeholder) {
 
   imgElement.style.display = "block";
   imgElement.src = url;
-
-  for (const skeleton of skeletons) {
-    skeleton.remove();
-  }
-  skeletons = [];
 }
