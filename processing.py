@@ -46,7 +46,7 @@ def process_profile_frame(frame, pose, analyzer):
     return frame, metrics
 
 
-def listen_for_voice_command(audio_handler, stop_event, start_event):
+def listen_for_start_or_stop_command(audio_handler, stop_event, start_event):
     recognizer = sr.Recognizer()
     mic = sr.Microphone()
     
@@ -65,6 +65,38 @@ def listen_for_voice_command(audio_handler, stop_event, start_event):
             if "start" in text:
                 audio_handler.queue_speech("Rozpoczynam")
                 start_event.set()
+                return
+            elif "stop" in text or "koniec" in text:
+                audio_handler.queue_speech("Anulowano")
+                stop_event.set()
+                return
+                
+        except sr.WaitTimeoutError:
+            continue
+        except sr.UnknownValueError:
+            continue
+        except Exception as e:
+            print(f"Speech recognition error: {e}")
+            continue
+
+
+def listen_for_stop_command(audio_handler, stop_event):
+    recognizer = sr.Recognizer()
+    mic = sr.Microphone()
+    
+    with mic as source:
+        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+    
+    while not stop_event.is_set():
+        try:
+            with mic as source:
+                audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
+            
+            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
+            
+            if "stop" in text or "koniec" in text:
+                audio_handler.queue_speech("Kończę trening")
+                stop_event.set()
                 return
                 
         except sr.WaitTimeoutError:
@@ -92,7 +124,7 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     start_event = Event()
     
     speech_thread = Thread(
-        target=listen_for_voice_command,
+        target=listen_for_start_or_stop_command,
         args=(audio_handler, stop_event, start_event),
         daemon=True
     )
@@ -129,6 +161,10 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
         
         socketio.emit('front-frame', front_img.tobytes())
         socketio.emit('profile-frame', profile_img.tobytes())
+        
+        if stop_event.is_set():
+            socketio.emit('voice-stop')
+            break
     
     if stop_event.is_set():
         audio_handler.stop()
@@ -137,6 +173,13 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
         return
     
     socketio.emit('status', {'state': 'analyzing'})
+    
+    stop_speech_thread = Thread(
+        target=listen_for_stop_command,
+        args=(audio_handler, stop_event),
+        daemon=True
+    )
+    stop_speech_thread.start()
     
     front_analyzer = PoseAnalyzer(calculate_front_bicep_curl, validate_front_bicep_curl)
     profile_analyzer = PoseAnalyzer(calculate_profile_bicep_curl, validate_profile_bicep_curl)
@@ -191,6 +234,10 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
         socketio.emit('front-frame', front_img.tobytes())
         socketio.emit('profile-frame', profile_img.tobytes())
         socketio.emit('metrics', metrics_data)
+        
+        if stop_event.is_set():
+            socketio.emit('voice-stop')
+            break
 
     audio_handler.stop()
     front_stream.stop()

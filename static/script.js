@@ -83,7 +83,8 @@ function changeStateToConnected() {
 socket.on("status", (data) => {
   if (data.state === "waiting") {
     if (tipsMessage) {
-      tipsMessage.textContent = "Powiedz 'start' aby rozpocząć trening";
+      tipsMessage.textContent =
+        "Powiedz 'start' aby rozpocząć lub 'stop' aby anulować";
       tipsMessage.style.display = "block";
       tipsMessage.style.fontSize = "1.2rem";
       tipsMessage.style.color = "var(--primary)";
@@ -92,8 +93,9 @@ socket.on("status", (data) => {
     }
   } else if (data.state === "analyzing") {
     if (tipsMessage) {
-      tipsMessage.textContent = "";
-      tipsMessage.style.display = "none";
+      tipsMessage.textContent = "Powiedz 'stop' lub 'koniec' aby zakończyć";
+      tipsMessage.style.fontSize = "0.9rem";
+      tipsMessage.style.color = "var(--text-muted)";
     }
     startTimer();
   }
@@ -118,6 +120,20 @@ socket.on("profile-frame", (data) => {
 socket.on("metrics", (data) => {
   if (rightRepsSpan) rightRepsSpan.textContent = data.right_reps;
   if (leftRepsSpan) leftRepsSpan.textContent = data.left_reps;
+});
+
+socket.on("voice-stop", () => {
+  pressedStop = true;
+  resetUI();
+  stopTimer();
+  statusFront.textContent = "Rozłączono";
+  statusDotFront.style.background = "var(--bad)";
+  statusProfile.textContent = "Rozłączono";
+  statusDotProfile.style.background = "var(--bad)";
+  if (tipsMessage) {
+    tipsMessage.textContent = "";
+    tipsMessage.style.display = "none";
+  }
 });
 
 function resetUI() {
