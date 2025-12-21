@@ -34,7 +34,6 @@ def calculate_angle(point_a, point_b, point_c):
     return math.degrees(math.acos(cos_angle))
 
 
-
 def calculate_trunk_angle(shoulder, hip):
     shoulder = to_numpy(shoulder)
     hip = to_numpy(hip)
@@ -55,6 +54,13 @@ def calculate_elbow_to_torso_distance(elbow, left_shoulder, right_shoulder):
         shoulder_width = 1
     distance = np.linalg.norm(to_numpy(elbow) - shoulder_center)
     return distance / shoulder_width
+
+
+def calculate_wrist_to_shoulder_distance(wrist, shoulder):
+    shoulder_np = to_numpy(shoulder)
+    wrist_np = to_numpy(wrist)
+    distance = np.linalg.norm(wrist_np - shoulder_np)
+    return distance
 
 
 def calculate_forearm_orientation(elbow, wrist):

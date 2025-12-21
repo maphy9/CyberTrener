@@ -1,15 +1,26 @@
 from collections import deque
-from calculations import (
-    extract_pose_landmarks, calculate_angle, calculate_trunk_angle,
-    calculate_elbow_to_torso_distance, smooth_value, detect_phase
-)
+from calculations import *
 from constants import *
 import time
 
 
-class FrontAnalyzer:
-    def __init__(self, max_history=30):
+class BaseAnalyzer:
+    def __init__(self, validation_fn, max_history=30):
+        self.validation_fn = validation_fn
         self.max_history = max_history
+        self.last_validation_error = None
+    
+    def validate(self, metrics):
+        self.last_validation_error = self.validation_fn(metrics)
+        return self.last_validation_error
+    
+    def get_validation_error(self):
+        return self.last_validation_error
+
+
+class FrontAnalyzer(BaseAnalyzer):
+    def __init__(self, validation_fn, max_history=30):
+        super().__init__(validation_fn, max_history)
         self.right_angle_history_timed = deque(maxlen=max_history)
         self.left_angle_history_timed = deque(maxlen=max_history)
         self.right_angle_smooth = None
@@ -17,6 +28,8 @@ class FrontAnalyzer:
         self.trunk_angle_smooth = None
         self.right_elbow_dist_smooth = None
         self.left_elbow_dist_smooth = None
+        self.right_wrist_dist_smooth = None
+        self.left_wrist_dist_smooth = None
         
         self.right_reps = 0
         self.left_reps = 0
@@ -66,8 +79,22 @@ class FrontAnalyzer:
         self.right_elbow_dist_smooth = smooth_value(right_dist_raw, self.right_elbow_dist_smooth, FRONT_ELBOW_DIST_SMOOTHING)
         self.left_elbow_dist_smooth = smooth_value(left_dist_raw, self.left_elbow_dist_smooth, FRONT_ELBOW_DIST_SMOOTHING)
         
-        right_phase_detected = detect_phase(self.right_angle_smooth, flex_threshold=FRONT_FLEX_THRESHOLD, extend_threshold=FRONT_EXTEND_THRESHOLD)
-        left_phase_detected = detect_phase(self.left_angle_smooth, flex_threshold=FRONT_FLEX_THRESHOLD, extend_threshold=FRONT_EXTEND_THRESHOLD)
+        right_wrist_dist_raw = calculate_wrist_to_shoulder_distance(right_wrist, right_shoulder)
+        left_wrist_dist_raw = calculate_wrist_to_shoulder_distance(left_wrist, left_shoulder)
+        
+        self.right_wrist_dist_smooth = smooth_value(right_wrist_dist_raw, self.right_wrist_dist_smooth, FRONT_WRIST_DIST_SMOOTHING)
+        self.left_wrist_dist_smooth = smooth_value(left_wrist_dist_raw, self.left_wrist_dist_smooth, FRONT_WRIST_DIST_SMOOTHING)
+        
+        right_phase_detected = detect_phase(
+            self.right_angle_smooth,
+            FRONT_FLEX_THRESHOLD,
+            FRONT_EXTEND_THRESHOLD,
+        )
+        left_phase_detected = detect_phase(
+            self.left_angle_smooth,
+            FRONT_FLEX_THRESHOLD,
+            FRONT_EXTEND_THRESHOLD,
+        )
         
         if right_phase_detected == 'middle':
             self.right_phase = 'middle'
@@ -102,7 +129,7 @@ class FrontAnalyzer:
             self.left_rep_flag = False
     
     def get_metrics(self):
-        return {
+        metrics = {
             'right_angle': round(self.right_angle_smooth or 0, 1),
             'left_angle': round(self.left_angle_smooth or 0, 1),
             'right_reps': self.right_reps,
@@ -111,15 +138,20 @@ class FrontAnalyzer:
             'left_phase': self.left_phase,
             'right_elbow_dist': round(self.right_elbow_dist_smooth or 0, 3),
             'left_elbow_dist': round(self.left_elbow_dist_smooth or 0, 3),
+            'right_wrist_dist': round(self.right_wrist_dist_smooth or 0, 3),
+            'left_wrist_dist': round(self.left_wrist_dist_smooth or 0, 3),
         }
+        self.validate(metrics)
+        return metrics
 
 
-class ProfileAnalyzer:
-    def __init__(self, max_history=30):
-        self.max_history = max_history
+class ProfileAnalyzer(BaseAnalyzer):
+    def __init__(self, validation_fn, max_history=30):
+        super().__init__(validation_fn, max_history)
         self.right_angle_history_timed = deque(maxlen=max_history)
         self.right_angle_smooth = None
         self.trunk_angle_smooth = None
+        self.right_wrist_dist_smooth = None
         
         self.right_reps = 0
         self.right_phase = 'unknown'
@@ -151,6 +183,9 @@ class ProfileAnalyzer:
         self.right_angle_smooth = smooth_value(right_angle_raw, self.right_angle_smooth, PROFILE_ANGLE_SMOOTHING)
         self.right_angle_history_timed.append((current_time, self.right_angle_smooth))
         
+        right_wrist_dist_raw = calculate_wrist_to_shoulder_distance(right_wrist, right_shoulder)
+        self.right_wrist_dist_smooth = smooth_value(right_wrist_dist_raw, self.right_wrist_dist_smooth, PROFILE_WRIST_DIST_SMOOTHING)
+        
         shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
                         (right_shoulder[1] + left_shoulder[1]) / 2,
                         (right_shoulder[2] + left_shoulder[2]) / 2)
@@ -161,7 +196,11 @@ class ProfileAnalyzer:
         trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
         self.trunk_angle = smooth_value(trunk_angle_raw, self.trunk_angle, PROFILE_TRUNK_SMOOTHING)
         
-        right_phase_detected = detect_phase(self.right_angle_smooth, flex_threshold=PROFILE_FLEX_THRESHOLD, extend_threshold=PROFILE_EXTEND_THRESHOLD)
+        right_phase_detected = detect_phase(
+            self.right_angle_smooth,
+            PROFILE_FLEX_THRESHOLD,
+            PROFILE_EXTEND_THRESHOLD,
+        )
         
         if right_phase_detected == 'middle':
             self.right_phase = 'middle'
@@ -180,10 +219,12 @@ class ProfileAnalyzer:
             self.right_rep_flag = False
     
     def get_metrics(self):
-        return {
+        metrics = {
             'right_angle': round(self.right_angle_smooth or 0, 1),
             'right_reps': self.right_reps,
             'right_phase': self.right_phase,
             'trunk_angle': round(self.trunk_angle or 0, 1),
+            'right_wrist_dist': round(self.right_wrist_dist_smooth or 0, 3),
         }
-
+        self.validate(metrics)
+        return metrics

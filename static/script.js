@@ -18,72 +18,6 @@ const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
 
-let prevRightReps = 0;
-let prevLeftReps = 0;
-let prevErrors = new Set();
-
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const speechSynth = window.speechSynthesis;
-const soundQueue = [];
-let isPlaying = false;
-
-function playBeep() {
-  return new Promise((resolve) => {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 800;
-    oscillator.type = "sine";
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.01,
-      audioContext.currentTime + 0.1
-    );
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
-
-    oscillator.onended = resolve;
-  });
-}
-
-function speakText(text) {
-  return new Promise((resolve) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-    utterance.onend = resolve;
-    utterance.onerror = resolve;
-    speechSynth.speak(utterance);
-  });
-}
-
-async function processQueue() {
-  if (isPlaying || soundQueue.length === 0) return;
-
-  isPlaying = true;
-  const sound = soundQueue.shift();
-
-  if (sound.type === "beep") {
-    await playBeep();
-  } else if (sound.type === "speech") {
-    await speakText(sound.text);
-  }
-
-  isPlaying = false;
-  processQueue();
-}
-
-function queueSound(sound) {
-  soundQueue.push(sound);
-  processQueue();
-}
-
 function startTimer() {
   if (timerStarted) {
     return;
@@ -121,9 +55,6 @@ btnStart.addEventListener("click", () => {
   socket.emit("start-session");
   btnStart.disabled = true;
   btnStop.disabled = false;
-  prevRightReps = 0;
-  prevLeftReps = 0;
-  prevErrors.clear();
 });
 
 btnStop.addEventListener("click", () => {
@@ -163,27 +94,8 @@ socket.on("profile-frame", (data) => {
 });
 
 socket.on("metrics", (data) => {
-  if (data.right_reps > prevRightReps) {
-    queueSound({ type: "beep" });
-    prevRightReps = data.right_reps;
-  }
-
-  if (data.left_reps > prevLeftReps) {
-    queueSound({ type: "beep" });
-    prevLeftReps = data.left_reps;
-  }
-
   if (rightRepsSpan) rightRepsSpan.textContent = data.right_reps;
   if (leftRepsSpan) leftRepsSpan.textContent = data.left_reps;
-
-  if (data.errors && data.errors.length > 0) {
-    data.errors.forEach((error) => {
-      if (!prevErrors.has(error)) {
-        queueSound({ type: "speech", text: error });
-        prevErrors.add(error);
-      }
-    });
-  }
 });
 
 function resetUI() {
@@ -204,12 +116,6 @@ function resetUI() {
 
   if (rightRepsSpan) rightRepsSpan.textContent = "0";
   if (leftRepsSpan) leftRepsSpan.textContent = "0";
-
-  prevRightReps = 0;
-  prevLeftReps = 0;
-  prevErrors.clear();
-  soundQueue.length = 0;
-  speechSynth.cancel();
 }
 
 function updateImage(imgElement, data, placeholder) {
@@ -218,11 +124,6 @@ function updateImage(imgElement, data, placeholder) {
   const url = URL.createObjectURL(blob);
 
   imgElement.onload = function () {
-    console.log(
-      `Dimensions: ${imgElement.naturalWidth}px x ${imgElement.naturalHeight}px`
-    );
-
-    // Optional: Clean up the event listener so it doesn't pile up
     imgElement.onload = null;
   };
 
