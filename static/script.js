@@ -217,6 +217,15 @@ function updateImage(imgElement, data, placeholder) {
   const blob = new Blob([arrayBufferView], { type: "image/jpeg" });
   const url = URL.createObjectURL(blob);
 
+  imgElement.onload = function () {
+    console.log(
+      `Dimensions: ${imgElement.naturalWidth}px x ${imgElement.naturalHeight}px`
+    );
+
+    // Optional: Clean up the event listener so it doesn't pile up
+    imgElement.onload = null;
+  };
+
   if (imgElement.src) {
     URL.revokeObjectURL(imgElement.src);
   }
