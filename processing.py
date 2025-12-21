@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
-from pose_analyzer import FrontAnalyzer, ProfileAnalyzer
+from pose_analyzer import PoseAnalyzer
+from curl_metrics import *
 from exercise_validators import validate_front_bicep_curl, validate_profile_bicep_curl
 from audio import AudioHandler
 import time
@@ -55,8 +56,8 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
         model_complexity=1
     )
     
-    front_analyzer = FrontAnalyzer(validate_front_bicep_curl)
-    profile_analyzer = ProfileAnalyzer(validate_profile_bicep_curl)
+    front_analyzer = PoseAnalyzer(calculate_front_bicep_curl, validate_front_bicep_curl)
+    profile_analyzer = PoseAnalyzer(calculate_profile_bicep_curl, validate_profile_bicep_curl)
     audio_handler = AudioHandler()
     
     prev_right_reps = 0
@@ -76,8 +77,8 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
         _, front_img = cv2.imencode('.jpg', front_frame)
         _, profile_img = cv2.imencode('.jpg', profile_frame)
 
-        right_reps = max(front_metrics['right_reps'], profile_metrics['right_reps'])
-        left_reps = front_metrics['left_reps']
+        right_reps = max(front_metrics.get('right_reps', 0), profile_metrics.get('right_reps', 0))
+        left_reps = front_metrics.get('left_reps', 0)
         
         if right_reps > prev_right_reps:
             audio_handler.queue_beep()
