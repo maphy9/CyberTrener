@@ -17,6 +17,7 @@ const statusDotFront = document.getElementById("status-dot-front");
 const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
+const tipsMessage = document.getElementById("tips-message");
 
 function startTimer() {
   if (timerStarted) {
@@ -66,6 +67,10 @@ btnStop.addEventListener("click", () => {
   statusDotFront.style.background = "var(--bad)";
   statusProfile.textContent = "Rozłączono";
   statusDotProfile.style.background = "var(--bad)";
+  if (tipsMessage) {
+    tipsMessage.textContent = "";
+    tipsMessage.style.display = "none";
+  }
 });
 
 function changeStateToConnected() {
@@ -75,11 +80,29 @@ function changeStateToConnected() {
   statusDotProfile.style.background = "var(--perfect)";
 }
 
+socket.on("status", (data) => {
+  if (data.state === "waiting") {
+    if (tipsMessage) {
+      tipsMessage.textContent = "Powiedz 'start' aby rozpocząć trening";
+      tipsMessage.style.display = "block";
+      tipsMessage.style.fontSize = "1.2rem";
+      tipsMessage.style.color = "var(--primary)";
+      tipsMessage.style.textAlign = "center";
+      tipsMessage.style.marginTop = "1rem";
+    }
+  } else if (data.state === "analyzing") {
+    if (tipsMessage) {
+      tipsMessage.textContent = "";
+      tipsMessage.style.display = "none";
+    }
+    startTimer();
+  }
+});
+
 socket.on("front-frame", (data) => {
   if (pressedStop) {
     return;
   }
-  startTimer();
   changeStateToConnected();
   updateImage(frontImg, data, placeholderFront);
 });
@@ -88,7 +111,6 @@ socket.on("profile-frame", (data) => {
   if (pressedStop) {
     return;
   }
-  startTimer();
   changeStateToConnected();
   updateImage(profileImg, data, placeholderProfile);
 });
