@@ -1,29 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Camera Stream Viewer</title>
+    <title>PROJEKT CyberTrener</title>
     <link rel="stylesheet" href="static/style.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="static/script.js" defer></script>
   </head>
   <body>
-    <h1>Dual Camera Stream</h1>
-    <div class="controls">
-      <button id="btn-start">Start Session</button>
-      <button id="btn-stop" disabled>End Session</button>
-      <span id="status" class="status">Disconnected</span>
-    </div>
-    <div class="video-container">
-      <div class="cam-box">
-        <span class="placeholder">Waiting for stream...</span>
-        <img id="front-image" alt="" />
+    <div class="home-page" id="homePage">
+      <div class="logo">
+        <div class="logo-icon">🏋️</div>
       </div>
-      <div class="cam-box">
-        <span class="placeholder">Waiting for stream...</span>
-        <img id="profile-image" alt="" />
+      <h1 class="app-title">CYBERTRENER</h1>
+      <p class="app-subtitle">Twój inteligentny asystent treningowy</p>
+      <div class="menu-buttons">
+        <a href="/training" class="btn btn-primary"> Zacznij trening </a>
+        <button class="btn btn-secondary" disabled>Ustawienia</button>
       </div>
+      <p class="version">Wersja Beta</p>
     </div>
   </body>
 </html>

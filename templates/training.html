@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PROJEKT CyberTrener - Trening</title>
+    <link rel="stylesheet" href="static/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+  </head>
+  <body>
+    <div class="training-page" id="trainingPage" style="display: flex">
+      <header class="training-header">
+        <a href="/" class="back-btn">← Powrót</a>
+        <h2 class="exercise-name">
+          Naprzemienne uginanie przedramion z hantlami
+        </h2>
+        <div class="timer" id="timer">00:00</div>
+      </header>
+
+      <div class="training-content">
+        <div class="main-column">
+          <div class="camera-feed camera-front">
+            <div class="camera-header">
+              <span class="camera-label"> 📹 Frontal camera </span>
+              <span class="camera-status">
+                <span class="status-dot" id="status-dot-front"></span>
+                <span id="status-front">Rozłączono</span>
+              </span>
+            </div>
+            <div class="camera-view">
+              <div class="camera-placeholder" id="placeholder-front">
+                <div class="camera-placeholder-icon">📹</div>
+                <p>Widok z przodu</p>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem">
+                  Czeka na połączenie
+                </p>
+              </div>
+              <img id="front-image" alt="" />
+            </div>
+          </div>
+        </div>
+
+        <div class="side-column">
+          <div class="camera-feed camera-profile">
+            <div class="camera-header">
+              <span class="camera-label"> 📹 Profile camera </span>
+              <span class="camera-status">
+                <span class="status-dot" id="status-dot-profile"></span>
+                <span id="status-profile">Rozłączono</span>
+              </span>
+            </div>
+            <div class="camera-view">
+              <div class="camera-placeholder" id="placeholder-profile">
+                <div class="camera-placeholder-icon">📹</div>
+                <p>Widok z boku</p>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem">
+                  Czeka na połączenie
+                </p>
+              </div>
+              <img id="profile-image" alt="" />
+            </div>
+          </div>
+
+          <div class="controls-box">
+            <button class="btn btn-primary" id="btn-start">START</button>
+            <button class="btn btn-secondary" id="btn-stop" disabled>
+              STOP
+            </button>
+          </div>
+
+          <div class="stats-compact">
+            <div class="stat-row">
+              <span class="stat-label">Prawe ramię:</span>
+              <span class="stat-result">
+                <strong class="stat-value primary" id="right-reps">0</strong>
+                powt.
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Lewe ramię:</span>
+              <span class="stat-result">
+                <strong class="stat-value secondary" id="left-reps">0</strong>
+                powt.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: none !important">
+      <p id="tips-message"></p>
+    </div>
+
+    <script src="static/script.js"></script>
+  </body>
+</html>
