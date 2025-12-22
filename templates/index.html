@@ -13,11 +13,74 @@
       </div>
       <h1 class="app-title">CYBERTRENER</h1>
       <p class="app-subtitle">Twój inteligentny asystent treningowy</p>
+
+      <div class="camera-settings">
+        <div class="camera-setup">
+          <h3>Kamera frontalna</h3>
+          <div class="setup-options">
+            <label class="radio-option">
+              <input type="radio" name="front-type" value="physical" checked />
+              <span>Fizyczne połączenie</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="front-type" value="ip" />
+              <span>Połączenie IP</span>
+            </label>
+          </div>
+          <div class="setup-input" id="front-physical-input">
+            <label>Indeks kamery:</label>
+            <input type="number" id="front-index" value="0" min="0" />
+          </div>
+          <div class="setup-input" id="front-ip-input" style="display: none">
+            <label>Adres URL:</label>
+            <input
+              type="text"
+              id="front-url"
+              placeholder="http://192.168.1.100:8080/video"
+            />
+          </div>
+        </div>
+
+        <div class="camera-setup">
+          <h3>Kamera profilowa</h3>
+          <p class="camera-note">Kamera musi być skierowana na prawą rękę</p>
+          <div class="setup-options">
+            <label class="radio-option">
+              <input type="radio" name="profile-type" value="physical" />
+              <span>Fizyczne połączenie</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="profile-type" value="ip" checked />
+              <span>Połączenie IP</span>
+            </label>
+          </div>
+          <div
+            class="setup-input"
+            id="profile-physical-input"
+            style="display: none"
+          >
+            <label>Indeks kamery:</label>
+            <input type="number" id="profile-index" value="1" min="0" />
+          </div>
+          <div class="setup-input" id="profile-ip-input">
+            <label>Adres URL:</label>
+            <input
+              type="text"
+              id="profile-url"
+              placeholder="http://192.168.1.101:8080/video"
+            />
+          </div>
+        </div>
+      </div>
+
       <div class="menu-buttons">
-        <a href="/training" class="btn btn-primary"> Zacznij trening </a>
-        <button class="btn btn-secondary" disabled>Ustawienia</button>
+        <button class="btn btn-primary" id="start-training-btn">
+          Zacznij trening
+        </button>
       </div>
       <p class="version">Wersja Beta</p>
     </div>
+
+    <script src="static/index.js"></script>
   </body>
 </html>

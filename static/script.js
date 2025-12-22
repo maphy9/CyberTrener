@@ -5,6 +5,11 @@ let pressedStop = true;
 
 const socket = io("http://localhost:5000");
 
+const cameraSettings = JSON.parse(localStorage.getItem("cameraSettings")) || {
+  front: { type: "physical", value: 0 },
+  profile: { type: "ip", value: "" },
+};
+
 const btnStart = document.getElementById("btn-start");
 const btnStop = document.getElementById("btn-stop");
 const frontImg = document.getElementById("front-image");
@@ -53,7 +58,7 @@ function updateTimerDisplay() {
 
 btnStart.addEventListener("click", () => {
   pressedStop = false;
-  socket.emit("start-session");
+  socket.emit("start-session", cameraSettings);
   btnStart.disabled = true;
   btnStop.disabled = false;
 });
@@ -99,6 +104,19 @@ socket.on("status", (data) => {
     }
     startTimer();
   }
+});
+
+socket.on("connection-error", (data) => {
+  pressedStop = true;
+  resetUI();
+  stopTimer();
+  alert(
+    `Błąd połączenia z kamerą: ${data.message}\nSprawdź ustawienia kamer na stronie głównej.`
+  );
+  statusFront.textContent = "Błąd połączenia";
+  statusDotFront.style.background = "var(--bad)";
+  statusProfile.textContent = "Błąd połączenia";
+  statusDotProfile.style.background = "var(--bad)";
 });
 
 socket.on("front-frame", (data) => {
