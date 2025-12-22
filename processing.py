@@ -50,7 +50,7 @@ def listen_for_start_or_stop_command(audio_handler, stop_event, start_event):
     recognizer = sr.Recognizer()
     mic = sr.Microphone()
     
-    audio_handler.queue_speech("Powiedz 'start' aby rozpocząć")
+    audio_handler.queue_speech("Powiedz 'start' aby rozpoczÄ…Ä‡")
     
     with mic as source:
         recognizer.adjust_for_ambient_noise(source, duration=0.5)
@@ -60,7 +60,7 @@ def listen_for_start_or_stop_command(audio_handler, stop_event, start_event):
             with mic as source:
                 audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
             
-            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
+            text = recognizer.recognize_google(audio, language="pl-PL").lower()
             
             if "start" in text:
                 audio_handler.queue_speech("Rozpoczynam")
@@ -92,10 +92,10 @@ def listen_for_stop_command(audio_handler, stop_event):
             with mic as source:
                 audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
             
-            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
+            text = recognizer.recognize_google(audio, language="pl-PL").lower()
             
             if "stop" in text or "koniec" in text:
-                audio_handler.queue_speech("Kończę trening")
+                audio_handler.queue_speech("KoÅ„czÄ™ trening")
                 stop_event.set()
                 return
                 
@@ -133,8 +133,8 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     socketio.emit('status', {'state': 'waiting'})
     
     while not stop_event.is_set() and not start_event.is_set():
-        front_frame = front_stream.get()
-        profile_frame = profile_stream.get()
+        front_frame, front_was_read = front_stream.get()
+        profile_frame, profile_was_read = profile_stream.get()
         if front_frame is None or profile_frame is None:
             continue
         
@@ -188,15 +188,21 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     prev_left_reps = 0
     last_error_time = {}
     ERROR_REPEAT_DELAY = 5.0
+    
+    front_metrics = {}
+    profile_metrics = {}
 
     while not stop_event.is_set():
-        front_frame = front_stream.get()
-        profile_frame = profile_stream.get()
+        front_frame, front_was_read = front_stream.get()
+        profile_frame, profile_was_read = profile_stream.get()
         if front_frame is None or profile_frame is None:
             continue
 
-        front_frame, front_metrics = process_front_frame(front_frame, front_pose, front_analyzer)
-        profile_frame, profile_metrics = process_profile_frame(profile_frame, profile_pose, profile_analyzer)
+        if not front_was_read:
+            front_frame, front_metrics = process_front_frame(front_frame, front_pose, front_analyzer)
+
+        if not profile_was_read:
+            profile_frame, profile_metrics = process_profile_frame(profile_frame, profile_pose, profile_analyzer)
 
         _, front_img = cv2.imencode('.jpg', front_frame)
         _, profile_img = cv2.imencode('.jpg', profile_frame)
