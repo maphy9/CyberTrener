@@ -1,7 +1,8 @@
 let timerInterval;
 let seconds = 0;
 let timerStarted = false;
-let pressedStop = true;
+let isConnected = false;
+let isAnalyzing = false;
 
 const socket = io("http://localhost:5000");
 
@@ -10,8 +11,8 @@ const cameraSettings = JSON.parse(localStorage.getItem("cameraSettings")) || {
   profile: { type: "ip", value: "" },
 };
 
-const btnStart = document.getElementById("btn-start");
-const btnStop = document.getElementById("btn-stop");
+const btnConnect = document.getElementById("btn-connect");
+const btnDisconnect = document.getElementById("btn-disconnect");
 const frontImg = document.getElementById("front-image");
 const profileImg = document.getElementById("profile-image");
 const rightRepsSpan = document.getElementById("right-reps");
@@ -22,28 +23,7 @@ const statusDotFront = document.getElementById("status-dot-front");
 const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
-const tipsMessage = document.getElementById("tips-message");
-
-function startTimer() {
-  if (timerStarted) {
-    return;
-  }
-  timerStarted = true;
-  seconds = 0;
-  updateTimerDisplay();
-  timerInterval = setInterval(() => {
-    if (pressedStop) {
-      return;
-    }
-    seconds++;
-    updateTimerDisplay();
-  }, 1000);
-}
-
-function stopTimer() {
-  timerStarted = false;
-  clearInterval(timerInterval);
-}
+const voiceStatus = document.getElementById("voice-status");
 
 function updateTimerDisplay() {
   const mins = Math.floor(seconds / 60)
@@ -56,27 +36,71 @@ function updateTimerDisplay() {
   }
 }
 
-btnStart.addEventListener("click", () => {
-  pressedStop = false;
+function startTimer() {
+  if (!timerStarted) {
+    timerStarted = true;
+    timerInterval = setInterval(() => {
+      if (isAnalyzing) {
+        seconds++;
+        updateTimerDisplay();
+      }
+    }, 1000);
+  }
+}
+
+function stopTimer() {
+  timerStarted = false;
+  clearInterval(timerInterval);
+}
+
+function resetTimer() {
+  stopTimer();
+  seconds = 0;
+  updateTimerDisplay();
+}
+
+function setVoiceStatus(message) {
+  if (voiceStatus) {
+    voiceStatus.textContent = message;
+    voiceStatus.classList.add("visible");
+  }
+}
+
+function clearVoiceStatus() {
+  if (voiceStatus) {
+    voiceStatus.textContent = "";
+    voiceStatus.classList.remove("visible");
+  }
+}
+
+btnConnect.addEventListener("click", () => {
   socket.emit("start-session", cameraSettings);
-  btnStart.disabled = true;
-  btnStop.disabled = false;
+  btnConnect.disabled = true;
+  btnDisconnect.disabled = false;
+  isConnected = true;
 });
 
-btnStop.addEventListener("click", () => {
-  pressedStop = true;
+btnDisconnect.addEventListener("click", () => {
   socket.emit("end-session");
+  fullDisconnect();
+});
+
+function fullDisconnect() {
+  isConnected = false;
+  isAnalyzing = false;
+
+  resetTimer();
   resetUI();
-  stopTimer();
+  clearVoiceStatus();
+
   statusFront.textContent = "Rozłączono";
   statusDotFront.style.background = "var(--bad)";
   statusProfile.textContent = "Rozłączono";
   statusDotProfile.style.background = "var(--bad)";
-  if (tipsMessage) {
-    tipsMessage.textContent = "";
-    tipsMessage.style.display = "none";
-  }
-});
+
+  btnConnect.disabled = false;
+  btnDisconnect.disabled = true;
+}
 
 function changeStateToConnected() {
   statusFront.textContent = "Połączono";
@@ -87,50 +111,30 @@ function changeStateToConnected() {
 
 socket.on("status", (data) => {
   if (data.state === "waiting") {
-    if (tipsMessage) {
-      tipsMessage.textContent =
-        "Powiedz 'start' aby rozpocząć lub 'stop' aby anulować";
-      tipsMessage.style.display = "block";
-      tipsMessage.style.fontSize = "1.2rem";
-      tipsMessage.style.color = "var(--primary)";
-      tipsMessage.style.textAlign = "center";
-      tipsMessage.style.marginTop = "1rem";
-    }
+    isAnalyzing = false;
+    setVoiceStatus("Powiedz 'start' aby rozpocząć");
   } else if (data.state === "analyzing") {
-    if (tipsMessage) {
-      tipsMessage.textContent = "Powiedz 'stop' lub 'koniec' aby zakończyć";
-      tipsMessage.style.fontSize = "0.9rem";
-      tipsMessage.style.color = "var(--text-muted)";
-    }
+    isAnalyzing = true;
+    setVoiceStatus("Powiedz 'stop' aby zatrzymać");
     startTimer();
   }
 });
 
 socket.on("connection-error", (data) => {
-  pressedStop = true;
-  resetUI();
-  stopTimer();
   alert(
     `Błąd połączenia z kamerą: ${data.message}\nSprawdź ustawienia kamer na stronie głównej.`
   );
-  statusFront.textContent = "Błąd połączenia";
-  statusDotFront.style.background = "var(--bad)";
-  statusProfile.textContent = "Błąd połączenia";
-  statusDotProfile.style.background = "var(--bad)";
+  fullDisconnect();
 });
 
 socket.on("front-frame", (data) => {
-  if (pressedStop) {
-    return;
-  }
+  if (!isConnected) return;
   changeStateToConnected();
   updateImage(frontImg, data, placeholderFront);
 });
 
 socket.on("profile-frame", (data) => {
-  if (pressedStop) {
-    return;
-  }
+  if (!isConnected) return;
   changeStateToConnected();
   updateImage(profileImg, data, placeholderProfile);
 });
@@ -140,24 +144,11 @@ socket.on("metrics", (data) => {
   if (leftRepsSpan) leftRepsSpan.textContent = data.left_reps;
 });
 
-socket.on("voice-stop", () => {
-  pressedStop = true;
-  resetUI();
-  stopTimer();
-  statusFront.textContent = "Rozłączono";
-  statusDotFront.style.background = "var(--bad)";
-  statusProfile.textContent = "Rozłączono";
-  statusDotProfile.style.background = "var(--bad)";
-  if (tipsMessage) {
-    tipsMessage.textContent = "";
-    tipsMessage.style.display = "none";
-  }
+socket.on("session-ended", () => {
+  fullDisconnect();
 });
 
 function resetUI() {
-  if (btnStart) btnStart.disabled = false;
-  if (btnStop) btnStop.disabled = true;
-
   if (frontImg) {
     frontImg.style.display = "none";
     frontImg.src = "";
