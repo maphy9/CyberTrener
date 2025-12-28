@@ -9,67 +9,55 @@ def extract_pose_landmarks(results):
     except Exception:
         return landmarks
     for i, lm in enumerate(landmark_list):
-        landmarks[i] = (lm.x, lm.y, lm.z, getattr(lm, 'visibility', 0))
+        landmarks[i] = (lm.x, lm.y, getattr(lm, 'visibility', 0))
     return landmarks
 
 
-def landmark_to_pixel(landmark, frame_width, frame_height):
-    x, y, z, visibility = landmark
-    return (x * frame_width, y * frame_height, z, visibility)
-
-
-def to_numpy(point):
-    return np.array([point[0], point[1], point[2]], dtype=float)
-
-
 def calculate_angle(point_a, point_b, point_c):
-    vector_ba = np.array([point_a[0] - point_b[0], point_a[1] - point_b[1]], dtype=float)
-    vector_bc = np.array([point_c[0] - point_b[0], point_c[1] - point_b[1]], dtype=float)
+    vector_ba = np.array([point_a[0] - point_b[0], point_a[1] - point_b[1]])
+    vector_bc = np.array([point_c[0] - point_b[0], point_c[1] - point_b[1]])
+    
     length_ba = np.linalg.norm(vector_ba)
     length_bc = np.linalg.norm(vector_bc)
+    
     if length_ba == 0 or length_bc == 0:
         return 0
-    cos_angle = np.dot(vector_ba, vector_bc) / (length_ba * length_bc)
-    cos_angle = max(-1, min(1, cos_angle))
+    
+    cos_angle = np.clip(np.dot(vector_ba, vector_bc) / (length_ba * length_bc), -1, 1)
     return math.degrees(math.acos(cos_angle))
 
 
 def calculate_trunk_angle(shoulder, hip):
-    shoulder = to_numpy(shoulder)
-    hip = to_numpy(hip)
-    spine_vector = np.array([shoulder[0] - hip[0], shoulder[1] - hip[1]], dtype=float)
+    spine_vector = np.array([shoulder[0] - hip[0], shoulder[1] - hip[1]])
     vertical_axis = np.array([0, 1])
+    
     spine_length = np.linalg.norm(spine_vector)
     if spine_length == 0:
         return 0
-    cos_angle = np.dot(spine_vector, vertical_axis) / spine_length
-    cos_angle = max(-1, min(1, cos_angle))
+    
+    cos_angle = np.clip(np.dot(spine_vector, vertical_axis) / spine_length, -1, 1)
     return abs(math.degrees(math.acos(cos_angle)))
 
 
 def calculate_elbow_to_torso_distance(elbow, left_shoulder, right_shoulder):
-    shoulder_center = ((to_numpy(left_shoulder) + to_numpy(right_shoulder)) / 2)
-    shoulder_width = np.linalg.norm(to_numpy(left_shoulder) - to_numpy(right_shoulder))
+    left_np = np.array([left_shoulder[0], left_shoulder[1]])
+    right_np = np.array([right_shoulder[0], right_shoulder[1]])
+    elbow_np = np.array([elbow[0], elbow[1]])
+    
+    shoulder_center = (left_np + right_np) / 2
+    shoulder_width = np.linalg.norm(left_np - right_np)
+    
     if shoulder_width == 0:
         shoulder_width = 1
-    distance = np.linalg.norm(to_numpy(elbow) - shoulder_center)
+    
+    distance = np.linalg.norm(elbow_np - shoulder_center)
     return distance / shoulder_width
 
 
 def calculate_wrist_to_shoulder_distance(wrist, shoulder):
-    shoulder_np = to_numpy(shoulder)
-    wrist_np = to_numpy(wrist)
-    distance = np.linalg.norm(wrist_np - shoulder_np)
-    return distance
-
-
-def calculate_forearm_orientation(elbow, wrist):
-    vector = to_numpy(wrist) - to_numpy(elbow)
-    vx, vy = vector[0], vector[1]
-    if vx == 0 and vy == 0:
-        return 0
-    angle = math.degrees(math.atan2(vx, vy))
-    return angle
+    wrist_np = np.array([wrist[0], wrist[1]])
+    shoulder_np = np.array([shoulder[0], shoulder[1]])
+    return np.linalg.norm(wrist_np - shoulder_np)
 
 
 def smooth_value(current_value, previous_value, smoothing_factor=0.25):

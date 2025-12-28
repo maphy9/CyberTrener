@@ -60,7 +60,7 @@ def listen_for_start_or_stop_command(audio_handler, stop_event, start_event):
             with mic as source:
                 audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
             
-            text = recognizer.recognize_google(audio, language="pl-PL").lower()
+            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
             
             if "start" in text:
                 audio_handler.queue_speech("Rozpoczynam")
@@ -92,10 +92,10 @@ def listen_for_stop_command(audio_handler, stop_event):
             with mic as source:
                 audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
             
-            text = recognizer.recognize_google(audio, language="pl-PL").lower()
+            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
             
             if "stop" in text or "koniec" in text:
-                audio_handler.queue_speech("KoÅ„czÄ™ trening")
+                audio_handler.queue_speech("Kończę trening")
                 stop_event.set()
                 return
                 

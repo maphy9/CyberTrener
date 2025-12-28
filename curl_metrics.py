@@ -130,11 +130,9 @@ def calculate_profile_bicep_curl(results, history):
     right_wrist_dist_smooth = smooth_value(right_wrist_dist_raw, prev.get('right_wrist_dist_smooth'), PROFILE_WRIST_DIST_SMOOTHING)
     
     shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
-                    (right_shoulder[1] + left_shoulder[1]) / 2,
-                    (right_shoulder[2] + left_shoulder[2]) / 2)
+                    (right_shoulder[1] + left_shoulder[1]) / 2)
     hip_mid = ((right_hip[0] + left_hip[0]) / 2,
-               (right_hip[1] + left_hip[1]) / 2,
-               (right_hip[2] + left_hip[2]) / 2)
+               (right_hip[1] + left_hip[1]) / 2)
     
     trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
     trunk_angle_smooth = smooth_value(trunk_angle_raw, prev.get('trunk_angle_smooth'), PROFILE_TRUNK_SMOOTHING)
