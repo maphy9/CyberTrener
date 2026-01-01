@@ -6,6 +6,7 @@ from exercise_validators import validate_front_bicep_curl, validate_profile_bice
 from audio import AudioHandler
 import speech_recognition as sr
 from threading import Thread, Event
+from collections import deque
 import time
 
 mp_pose = mp.solutions.pose # type: ignore
@@ -107,6 +108,9 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     
     prev_right_reps = 0
     prev_left_reps = 0
+    valid_right_reps = 0
+    valid_left_reps = 0
+    rep_history = deque(maxlen=10)
     last_error_time = {}
     ERROR_REPEAT_DELAY = 5.0
     
@@ -132,16 +136,32 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
             if not profile_was_read:
                 profile_frame, profile_metrics = process_profile_frame(profile_frame, profile_pose, profile_analyzer)
 
-            right_reps = max(front_metrics.get('right_reps', 0), profile_metrics.get('right_reps', 0))
-            left_reps = front_metrics.get('left_reps', 0)
+            analyzer_right_reps = max(front_metrics.get('right_reps', 0), profile_metrics.get('right_reps', 0))
+            analyzer_left_reps = front_metrics.get('left_reps', 0)
             
-            if right_reps > prev_right_reps:
-                audio_handler.queue_beep()
-                prev_right_reps = right_reps
+            right_rep_detected = analyzer_right_reps > prev_right_reps
+            left_rep_detected = analyzer_left_reps > prev_left_reps
             
-            if left_reps > prev_left_reps:
-                audio_handler.queue_beep()
-                prev_left_reps = left_reps
+            if right_rep_detected and left_rep_detected:
+                audio_handler.queue_speech("Pracuj naprzemiennie")
+                prev_right_reps = analyzer_right_reps
+                prev_left_reps = analyzer_left_reps
+            elif right_rep_detected:
+                if rep_history and rep_history[-1] == 'right':
+                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                else:
+                    rep_history.append('right')
+                    valid_right_reps += 1
+                    audio_handler.queue_beep()
+                prev_right_reps = analyzer_right_reps
+            elif left_rep_detected:
+                if rep_history and rep_history[-1] == 'left':
+                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                else:
+                    rep_history.append('left')
+                    valid_left_reps += 1
+                    audio_handler.queue_beep()
+                prev_left_reps = analyzer_left_reps
             
             errors = []
             if front_analyzer.get_validation_error():
@@ -157,8 +177,8 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
                     last_error_time[error] = current_time
 
             metrics_data = {
-                'right_reps': right_reps,
-                'left_reps': left_reps,
+                'right_reps': valid_right_reps,
+                'left_reps': valid_left_reps,
                 'errors': errors
             }
             socketio.emit('metrics', metrics_data)

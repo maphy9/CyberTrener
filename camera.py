@@ -31,7 +31,7 @@ class CameraStream:
                     self.was_read = False
             else:
                 self.consecutive_failures += 1
-                if self.consecutive_failures > 30:
+                if self.consecutive_failures > 60:
                     self.is_connected = False
                     self.running = False
     
