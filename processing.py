@@ -142,6 +142,14 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
             right_stance_valid = front_metrics.get('right_stance_valid', True)
             left_stance_valid = front_metrics.get('left_stance_valid', True)
             
+            trunk_valid = True
+            trunk_angle = profile_metrics.get('trunk_angle')
+            if trunk_angle is not None and abs(trunk_angle - 180) > 25:
+                trunk_valid = False
+            
+            simultaneous_flex = (front_metrics.get('right_phase') == 'flexed' and 
+                                front_metrics.get('left_phase') == 'flexed')
+            
             right_rep_detected = analyzer_right_reps > prev_right_reps
             left_rep_detected = analyzer_left_reps > prev_left_reps
             
@@ -150,29 +158,35 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
                 prev_right_reps = analyzer_right_reps
                 prev_left_reps = analyzer_left_reps
             elif right_rep_detected:
-                if not right_stance_valid:
+                prev_right_reps = analyzer_right_reps
+                
+                if not trunk_valid:
+                    audio_handler.queue_speech("Trzymaj plecy prosto")
+                elif not right_stance_valid:
                     audio_handler.queue_speech("Trzymaj rękę pionowo")
-                    prev_right_reps = analyzer_right_reps
+                elif simultaneous_flex:
+                    audio_handler.queue_speech("Pracuj naprzemiennie")
                 elif rep_history and rep_history[-1] == 'right':
                     audio_handler.queue_speech("Pracuj naprzemiennie")
-                    prev_right_reps = analyzer_right_reps
                 else:
                     rep_history.append('right')
                     valid_right_reps += 1
                     audio_handler.queue_beep()
-                    prev_right_reps = analyzer_right_reps
             elif left_rep_detected:
-                if not left_stance_valid:
+                prev_left_reps = analyzer_left_reps
+                
+                if not trunk_valid:
+                    audio_handler.queue_speech("Trzymaj plecy prosto")
+                elif not left_stance_valid:
                     audio_handler.queue_speech("Trzymaj rękę pionowo")
-                    prev_left_reps = analyzer_left_reps
+                elif simultaneous_flex:
+                    audio_handler.queue_speech("Pracuj naprzemiennie")
                 elif rep_history and rep_history[-1] == 'left':
                     audio_handler.queue_speech("Pracuj naprzemiennie")
-                    prev_left_reps = analyzer_left_reps
                 else:
                     rep_history.append('left')
                     valid_left_reps += 1
                     audio_handler.queue_beep()
-                    prev_left_reps = analyzer_left_reps
             
             errors = []
             if front_analyzer.get_validation_error():

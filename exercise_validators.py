@@ -14,7 +14,7 @@ def validate_profile_bicep_curl(metrics):
     if trunk_angle is None:
         return None
     
-    if abs(trunk_angle - 180) > 25:
+    if abs(trunk_angle - 180) > 20:
         return "Trzymaj plecy prosto"
     
     return None
