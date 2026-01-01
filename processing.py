@@ -7,7 +7,6 @@ from audio import AudioHandler
 import speech_recognition as sr
 from threading import Thread, Event
 from collections import deque
-import time
 
 mp_pose = mp.solutions.pose # type: ignore
 mp_drawing = mp.solutions.drawing_utils # type: ignore
@@ -111,8 +110,6 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     valid_right_reps = 0
     valid_left_reps = 0
     rep_history = deque(maxlen=10)
-    last_error_time = {}
-    ERROR_REPEAT_DELAY = 5.0
     
     front_metrics = {}
     profile_metrics = {}
@@ -154,20 +151,30 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
             left_rep_detected = analyzer_left_reps > prev_left_reps
             
             if right_rep_detected and left_rep_detected:
-                audio_handler.queue_speech("Pracuj naprzemiennie")
+                if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
+                           for item in list(audio_handler.sound_queue.queue)):
+                    audio_handler.queue_speech("Pracuj naprzemiennie")
                 prev_right_reps = analyzer_right_reps
                 prev_left_reps = analyzer_left_reps
             elif right_rep_detected:
                 prev_right_reps = analyzer_right_reps
                 
                 if not trunk_valid:
-                    audio_handler.queue_speech("Trzymaj plecy prosto")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj plecy prosto" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Trzymaj plecy prosto")
                 elif not right_stance_valid:
-                    audio_handler.queue_speech("Trzymaj rękę pionowo")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj rękę pionowo" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Trzymaj rękę pionowo")
                 elif simultaneous_flex:
-                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Pracuj naprzemiennie")
                 elif rep_history and rep_history[-1] == 'right':
-                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Pracuj naprzemiennie")
                 else:
                     rep_history.append('right')
                     valid_right_reps += 1
@@ -176,13 +183,21 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
                 prev_left_reps = analyzer_left_reps
                 
                 if not trunk_valid:
-                    audio_handler.queue_speech("Trzymaj plecy prosto")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj plecy prosto" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Trzymaj plecy prosto")
                 elif not left_stance_valid:
-                    audio_handler.queue_speech("Trzymaj rękę pionowo")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj rękę pionowo" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Trzymaj rękę pionowo")
                 elif simultaneous_flex:
-                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Pracuj naprzemiennie")
                 elif rep_history and rep_history[-1] == 'left':
-                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
+                              for item in list(audio_handler.sound_queue.queue)):
+                        audio_handler.queue_speech("Pracuj naprzemiennie")
                 else:
                     rep_history.append('left')
                     valid_left_reps += 1
@@ -193,13 +208,6 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
                 errors.append(front_analyzer.get_validation_error())
             if profile_analyzer.get_validation_error():
                 errors.append(profile_analyzer.get_validation_error())
-            
-            current_time = time.time()
-            for error in errors:
-                last_time = last_error_time.get(error, 0)
-                if current_time - last_time >= ERROR_REPEAT_DELAY:
-                    audio_handler.queue_speech(error)
-                    last_error_time[error] = current_time
 
             metrics_data = {
                 'right_reps': valid_right_reps,
