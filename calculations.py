@@ -39,6 +39,19 @@ def calculate_trunk_angle(shoulder, hip):
     return abs(math.degrees(math.acos(cos_angle)))
 
 
+def calculate_arm_verticality(shoulder, elbow):
+    arm_vector = np.array([elbow[0] - shoulder[0], elbow[1] - shoulder[1]])
+    vertical_axis = np.array([0, -1])
+    
+    arm_length = np.linalg.norm(arm_vector)
+    if arm_length == 0:
+        return 0
+    
+    cos_angle = np.clip(np.dot(arm_vector, vertical_axis) / arm_length, -1, 1)
+    verticality = abs(180 - math.degrees(math.acos(cos_angle)))
+    return verticality
+
+
 def calculate_elbow_to_torso_distance(elbow, left_shoulder, right_shoulder):
     left_np = np.array([left_shoulder[0], left_shoulder[1]])
     right_np = np.array([right_shoulder[0], right_shoulder[1]])

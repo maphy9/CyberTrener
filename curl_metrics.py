@@ -22,6 +22,10 @@ def calculate_front_bicep_curl(results, history):
     right_angle_smooth = smooth_value(right_angle_raw, prev.get('right_angle_smooth'), FRONT_ANGLE_SMOOTHING)
     left_angle_smooth = smooth_value(left_angle_raw, prev.get('left_angle_smooth'), FRONT_ANGLE_SMOOTHING)
     
+    right_verticality = calculate_arm_verticality(right_shoulder, right_elbow)
+    left_verticality = calculate_arm_verticality(left_shoulder, left_elbow)
+    print(right_verticality)
+    
     right_dist_raw = calculate_elbow_to_torso_distance(right_elbow, right_shoulder, left_shoulder)
     left_dist_raw = calculate_elbow_to_torso_distance(left_elbow, right_shoulder, left_shoulder)
     
@@ -67,6 +71,13 @@ def calculate_front_bicep_curl(results, history):
     
     right_reps = prev.get('right_reps', 0)
     right_rep_flag = prev.get('right_rep_flag', False)
+    right_stance_valid = prev.get('right_stance_valid', True)
+    
+    if right_phase == 'extended' and not right_rep_flag:
+        right_stance_valid = True
+    
+    if right_verticality > VERTICAL_STANCE_THRESHOLD:
+        right_stance_valid = False
     
     if right_phase == 'flexed':
         right_rep_flag = True
@@ -76,6 +87,13 @@ def calculate_front_bicep_curl(results, history):
     
     left_reps = prev.get('left_reps', 0)
     left_rep_flag = prev.get('left_rep_flag', False)
+    left_stance_valid = prev.get('left_stance_valid', True)
+    
+    if left_phase == 'extended' and not left_rep_flag:
+        left_stance_valid = True
+    
+    if left_verticality > VERTICAL_STANCE_THRESHOLD:
+        left_stance_valid = False
     
     if left_phase == 'flexed':
         left_rep_flag = True
@@ -94,6 +112,10 @@ def calculate_front_bicep_curl(results, history):
         'left_elbow_dist': round(left_elbow_dist_smooth or 0, 3),
         'right_wrist_dist': round(right_wrist_dist_smooth or 0, 3),
         'left_wrist_dist': round(left_wrist_dist_smooth or 0, 3),
+        'right_verticality': round(right_verticality or 0, 1),
+        'left_verticality': round(left_verticality or 0, 1),
+        'right_stance_valid': right_stance_valid,
+        'left_stance_valid': left_stance_valid,
         'right_angle_smooth': right_angle_smooth,
         'left_angle_smooth': left_angle_smooth,
         'right_elbow_dist_smooth': right_elbow_dist_smooth,
