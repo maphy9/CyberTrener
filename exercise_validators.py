@@ -1,3 +1,6 @@
+from constants import TRUNK_ANGLE_THRESHOLD
+
+
 def validate_front_bicep_curl(metrics):
     right_phase = metrics.get('right_phase')
     left_phase = metrics.get('left_phase')
@@ -14,7 +17,7 @@ def validate_profile_bicep_curl(metrics):
     if trunk_angle is None:
         return None
     
-    if abs(trunk_angle - 180) > 20:
+    if abs(trunk_angle - 180) > TRUNK_ANGLE_THRESHOLD:
         return "Trzymaj plecy prosto"
     
     return None
