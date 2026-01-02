@@ -1,8 +1,9 @@
-from calculations import *
-from constants import *
+from core.calculations import *
+from core.constants import *
+from exercises.bicep_curl.constants import *
 
 
-def calculate_front_bicep_curl(results, history):
+def calculate_front_view(results, history):
     landmarks = extract_pose_landmarks(results)
     if not landmarks:
         return None
@@ -130,7 +131,7 @@ def calculate_front_bicep_curl(results, history):
     }
 
 
-def calculate_profile_bicep_curl(results, history):
+def calculate_profile_view(results, history):
     landmarks = extract_pose_landmarks(results)
     if not landmarks:
         return None

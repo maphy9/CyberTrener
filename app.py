@@ -2,7 +2,7 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 from threading import Thread, Event
 from camera import CameraStream
-from constants import *
+from core.constants import *
 from processing import process_camera_streams
 
 processing_event = Event()
