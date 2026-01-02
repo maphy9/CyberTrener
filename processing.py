@@ -7,24 +7,58 @@ from audio import AudioHandler
 import speech_recognition as sr
 from threading import Thread, Event
 from collections import deque
+import time
 
 mp_pose = mp.solutions.pose # type: ignore
 mp_drawing = mp.solutions.drawing_utils # type: ignore
 landmark_spec = mp_drawing.DrawingSpec(
     color=(245, 117, 66), 
-    thickness=1, 
-    circle_radius=1
+    thickness=2, 
+    circle_radius=2
 )
+
+RELEVANT_LANDMARKS = [11, 12, 13, 14, 15, 16, 23, 24]
+
+RELEVANT_CONNECTIONS = [
+    (11, 12),
+    (11, 13),
+    (13, 15),
+    (12, 14),
+    (14, 16),
+    (11, 23),
+    (12, 24),
+    (23, 24),
+]
+
+def draw_filtered_landmarks(frame, results):
+    if not results.pose_landmarks:
+        return
+    
+    landmarks = results.pose_landmarks.landmark
+    h, w, _ = frame.shape
+    
+    for connection in RELEVANT_CONNECTIONS:
+        start_idx, end_idx = connection
+        start_landmark = landmarks[start_idx]
+        end_landmark = landmarks[end_idx]
+        
+        if start_landmark.visibility > 0.5 and end_landmark.visibility > 0.5:
+            start_point = (int(start_landmark.x * w), int(start_landmark.y * h))
+            end_point = (int(end_landmark.x * w), int(end_landmark.y * h))
+            cv2.line(frame, start_point, end_point, (245, 117, 66), 2)
+    
+    for idx in RELEVANT_LANDMARKS:
+        landmark = landmarks[idx]
+        if landmark.visibility > 0.5:
+            cx, cy = int(landmark.x * w), int(landmark.y * h)
+            cv2.circle(frame, (cx, cy), 3, (245, 117, 66), -1)
 
 def process_front_frame(frame, pose, analyzer):
     image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     image_rgb.flags.writeable = False
     results = pose.process(image_rgb)
     image_rgb.flags.writeable = True
-    mp_drawing.draw_landmarks(
-        frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-        landmark_drawing_spec=landmark_spec
-    )
+    draw_filtered_landmarks(frame, results)
     
     analyzer.process_frame(results)
     metrics = analyzer.get_metrics()
@@ -36,10 +70,7 @@ def process_profile_frame(frame, pose, analyzer):
     image_rgb.flags.writeable = False
     results = pose.process(image_rgb)
     image_rgb.flags.writeable = True
-    mp_drawing.draw_landmarks(
-        frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-        landmark_drawing_spec=landmark_spec
-    )
+    draw_filtered_landmarks(frame, results)
     
     analyzer.process_frame(results)
     metrics = analyzer.get_metrics()
@@ -110,6 +141,9 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     valid_right_reps = 0
     valid_left_reps = 0
     rep_history = deque(maxlen=10)
+    last_error_spoken = {}
+    ERROR_COOLDOWN = 3.0
+    simultaneous_flex_occurred = False
     
     front_metrics = {}
     profile_metrics = {}
@@ -144,64 +178,61 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
             if trunk_angle is not None and abs(trunk_angle - 180) > 25:
                 trunk_valid = False
             
-            simultaneous_flex = (front_metrics.get('right_phase') == 'flexed' and 
-                                front_metrics.get('left_phase') == 'flexed')
+            right_phase = front_metrics.get('right_phase')
+            left_phase = front_metrics.get('left_phase')
+            
+            if right_phase == 'flexed' and left_phase == 'flexed':
+                simultaneous_flex_occurred = True
             
             right_rep_detected = analyzer_right_reps > prev_right_reps
             left_rep_detected = analyzer_left_reps > prev_left_reps
             
+            current_time = time.time()
+            
+            def try_speak_error(message):
+                last_spoken = last_error_spoken.get(message, 0)
+                if current_time - last_spoken >= ERROR_COOLDOWN:
+                    audio_handler.queue_speech(message)
+                    last_error_spoken[message] = current_time
+            
             if right_rep_detected and left_rep_detected:
-                if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
-                           for item in list(audio_handler.sound_queue.queue)):
-                    audio_handler.queue_speech("Pracuj naprzemiennie")
+                try_speak_error("Pracuj naprzemiennie")
                 prev_right_reps = analyzer_right_reps
                 prev_left_reps = analyzer_left_reps
             elif right_rep_detected:
                 prev_right_reps = analyzer_right_reps
                 
                 if not trunk_valid:
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj plecy prosto" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Trzymaj plecy prosto")
+                    try_speak_error("Trzymaj plecy prosto")
                 elif not right_stance_valid:
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj rękę pionowo" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Trzymaj rękę pionowo")
-                elif simultaneous_flex:
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Pracuj naprzemiennie")
+                    try_speak_error("Trzymaj rękę pionowo")
+                elif simultaneous_flex_occurred:
+                    try_speak_error("Pracuj na zmianę")
+                    simultaneous_flex_occurred = False
                 elif rep_history and rep_history[-1] == 'right':
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Pracuj naprzemiennie")
+                    try_speak_error("Pracuj naprzemiennie")
                 else:
                     rep_history.append('right')
                     valid_right_reps += 1
                     audio_handler.queue_beep()
+                    simultaneous_flex_occurred = False
             elif left_rep_detected:
                 prev_left_reps = analyzer_left_reps
                 
                 if not trunk_valid:
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj plecy prosto" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Trzymaj plecy prosto")
+                    try_speak_error("Trzymaj plecy prosto")
                 elif not left_stance_valid:
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Trzymaj rękę pionowo" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Trzymaj rękę pionowo")
-                elif simultaneous_flex:
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Pracuj naprzemiennie")
+                    try_speak_error("Trzymaj rękę pionowo")
+                elif simultaneous_flex_occurred:
+                    try_speak_error("Pracuj na zmianę")
+                    simultaneous_flex_occurred = False
                 elif rep_history and rep_history[-1] == 'left':
-                    if not any(item.get('type') == 'speech' and item.get('text') == "Pracuj naprzemiennie" 
-                              for item in list(audio_handler.sound_queue.queue)):
-                        audio_handler.queue_speech("Pracuj naprzemiennie")
+                    try_speak_error("Pracuj naprzemiennie")
                 else:
                     rep_history.append('left')
                     valid_left_reps += 1
                     audio_handler.queue_beep()
+                    simultaneous_flex_occurred = False
             
             errors = []
             if front_analyzer.get_validation_error():
@@ -224,19 +255,13 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
             front_image_rgb.flags.writeable = False
             front_results = front_pose.process(front_image_rgb)
             front_image_rgb.flags.writeable = True
-            mp_drawing.draw_landmarks(
-                front_frame, front_results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                landmark_drawing_spec=landmark_spec
-            )
+            draw_filtered_landmarks(front_frame, front_results)
             
             profile_image_rgb = cv2.cvtColor(profile_frame, cv2.COLOR_BGR2RGB)
             profile_image_rgb.flags.writeable = False
             profile_results = profile_pose.process(profile_image_rgb)
             profile_image_rgb.flags.writeable = True
-            mp_drawing.draw_landmarks(
-                profile_frame, profile_results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                landmark_drawing_spec=landmark_spec
-            )
+            draw_filtered_landmarks(profile_frame, profile_results)
 
         _, front_img = cv2.imencode('.jpg', front_frame)
         _, profile_img = cv2.imencode('.jpg', profile_frame)

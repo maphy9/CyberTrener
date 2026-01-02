@@ -24,7 +24,6 @@ def calculate_front_bicep_curl(results, history):
     
     right_verticality = calculate_arm_verticality(right_shoulder, right_elbow)
     left_verticality = calculate_arm_verticality(left_shoulder, left_elbow)
-    print(right_verticality)
     
     right_dist_raw = calculate_elbow_to_torso_distance(right_elbow, right_shoulder, left_shoulder)
     left_dist_raw = calculate_elbow_to_torso_distance(left_elbow, right_shoulder, left_shoulder)
