@@ -7,6 +7,7 @@ from threading import Thread, Event
 from queue import Queue
 import tempfile
 import os
+import speech_recognition as sr
 
 
 class AudioHandler:
@@ -59,7 +60,7 @@ class AudioHandler:
         try:
             asyncio.run(self._generate_speech(text, temp_path))
             
-            data, samplerate = sf.read(temp_path)
+            data, samplerate = sf.read(temp_path) # type: ignore
             sd.play(data, samplerate)
             sd.wait()
         except Exception as e:
@@ -93,3 +94,33 @@ class AudioHandler:
                 self.sound_queue.get_nowait()
             except Exception:
                 break
+
+
+def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
+    recognizer = sr.Recognizer()
+    mic = sr.Microphone()
+    
+    with mic as source:
+        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+    
+    while not stop_event.is_set():
+        try:
+            with mic as source:
+                audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
+            
+            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
+            
+            if "start" in text and not analyzing_event.is_set():
+                audio_handler.queue_speech("Rozpoczynam")
+                analyzing_event.set()
+            elif "stop" in text and analyzing_event.is_set():
+                audio_handler.queue_speech("Zatrzymuję")
+                analyzing_event.clear()
+                
+        except sr.WaitTimeoutError:
+            continue
+        except sr.UnknownValueError:
+            continue
+        except Exception as e:
+            print(f"Speech recognition error: {e}")
+            continue
