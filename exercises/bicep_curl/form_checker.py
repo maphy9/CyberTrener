@@ -1,14 +1,13 @@
-from exercises.bicep_curl.constants import TRUNK_ANGLE_THRESHOLD, VERTICAL_STANCE_THRESHOLD
+from exercises.bicep_curl.constants import TRUNK_ANGLE_THRESHOLD, VERTICAL_STANCE_THRESHOLD, STABILITY_FRAMES
 
 
 class AlternatingBicepCurlValidator:
     def __init__(self, calibration=None):
         self.calibration = calibration
-        self.simultaneous_flex_occurred = False
+        self.simultaneous_flex_frames = 0
         self.rep_history = []
         self.max_history = 10
         
-        # Use calibration values if available, otherwise use defaults
         if calibration and calibration.calibrated:
             self.trunk_tolerance = calibration.trunk_tolerance
             self.vertical_tolerance = calibration.vertical_tolerance
@@ -19,14 +18,15 @@ class AlternatingBicepCurlValidator:
             self.neutral_trunk_angle = 180
     
     def check_simultaneous_flexion(self, front_metrics):
-        right_phase = front_metrics.get('right_phase')
-        left_phase = front_metrics.get('left_phase')
+        right_rep_flag = front_metrics.get('right_rep_flag', False)
+        left_rep_flag = front_metrics.get('left_rep_flag', False)
         
-        if right_phase == 'flexed' and left_phase == 'flexed':
-            self.simultaneous_flex_occurred = True
+        if right_rep_flag and left_rep_flag:
+            self.simultaneous_flex_frames += 1
+        else:
+            self.simultaneous_flex_frames = max(0, self.simultaneous_flex_frames - 1)
     
     def validate_rep(self, side, front_metrics, profile_metrics):
-        # Check verticality using calibration tolerance
         right_verticality = front_metrics.get('right_verticality', 0)
         left_verticality = front_metrics.get('left_verticality', 0)
         
@@ -48,8 +48,8 @@ class AlternatingBicepCurlValidator:
             if not left_stance_valid:
                 return False, 'arm_not_vertical', ['left_arm']
         
-        if self.simultaneous_flex_occurred:
-            self.simultaneous_flex_occurred = False
+        if self.simultaneous_flex_frames >= STABILITY_FRAMES:
+            self.simultaneous_flex_frames = 0
             return False, 'both_arms_flexed', ['left_arm', 'right_arm']
         
         if len(self.rep_history) > 0 and self.rep_history[-1] == side:
@@ -63,7 +63,7 @@ class AlternatingBicepCurlValidator:
             self.rep_history.pop(0)
     
     def reset(self):
-        self.simultaneous_flex_occurred = False
+        self.simultaneous_flex_frames = 0
         self.rep_history = []
 
 

@@ -63,7 +63,7 @@ def calculate_front_view(results, history):
         left_phase = 'middle'
     elif left_phase_detected == left_prev_phase:
         left_phase_count += 1
-        if left_phase_count >= PHASE_STABILITY_FRAMES:
+        if left_phase_count >= STABILITY_FRAMES:
             left_phase = left_phase_detected
     else:
         left_phase_count = 1
@@ -169,7 +169,7 @@ def calculate_profile_view(results, history):
         right_phase = 'middle'
     elif right_phase_detected == right_prev_phase:
         right_phase_count += 1
-        if right_phase_count >= PHASE_STABILITY_FRAMES:
+        if right_phase_count >= STABILITY_FRAMES:
             right_phase = right_phase_detected
     else:
         right_phase_count = 1
