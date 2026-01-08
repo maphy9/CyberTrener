@@ -98,28 +98,38 @@ class AudioHandler:
 
 def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
     recognizer = sr.Recognizer()
+    recognizer.energy_threshold = 300
+    recognizer.dynamic_energy_threshold = True
+    recognizer.pause_threshold = 0.5
+    
     mic = sr.Microphone()
     
     with mic as source:
-        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+    
+    start_keywords = ['start', 'stars', 'stark', 'sztart', 'tart', 'art', 'zacznij', 'zaczynaj', 'rozpocznij', 'dalej', 'gotowy', 'gotowe']
+    stop_keywords = ['stop', 'stok', 'top', 'zatrzymaj', 'koniec', 'kończymy', 'pauza', 'czekaj']
     
     while not stop_event.is_set():
         try:
             with mic as source:
-                audio = recognizer.listen(source, timeout=1, phrase_time_limit=3)
+                audio = recognizer.listen(source, timeout=2, phrase_time_limit=4)
             
-            text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
+            try:
+                text = recognizer.recognize_google(audio, language="pl-PL").lower() # type: ignore
+            except sr.UnknownValueError:
+                continue
             
-            if "start" in text and not analyzing_event.is_set():
-                audio_handler.queue_speech("Rozpoczynam")
-                analyzing_event.set()
-            elif "stop" in text and analyzing_event.is_set():
-                audio_handler.queue_speech("Zatrzymuję")
-                analyzing_event.clear()
+            if not analyzing_event.is_set():
+                if any(kw in text for kw in start_keywords):
+                    audio_handler.queue_speech("Rozpoczynam")
+                    analyzing_event.set()
+            else:
+                if any(kw in text for kw in stop_keywords):
+                    audio_handler.queue_speech("Zatrzymuję")
+                    analyzing_event.clear()
                 
         except sr.WaitTimeoutError:
-            continue
-        except sr.UnknownValueError:
             continue
         except Exception as e:
             print(f"Speech recognition error: {e}")
