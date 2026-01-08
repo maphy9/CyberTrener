@@ -112,10 +112,10 @@ function changeStateToConnected() {
 socket.on("status", (data) => {
   if (data.state === "waiting") {
     isAnalyzing = false;
-    setVoiceStatus("Powiedz 'start' aby rozpocząć");
+    setVoiceStatus("Powiedz 'zacznij' aby rozpocząć");
   } else if (data.state === "analyzing") {
     isAnalyzing = true;
-    setVoiceStatus("Powiedz 'stop' aby zatrzymać");
+    setVoiceStatus("Powiedz 'pauza' aby zatrzymać");
     startTimer();
   }
 });

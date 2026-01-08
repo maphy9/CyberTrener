@@ -107,8 +107,8 @@ def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
     with mic as source:
         recognizer.adjust_for_ambient_noise(source, duration=1)
     
-    start_keywords = ['start', 'stars', 'stark', 'sztart', 'tart', 'art', 'zacznij', 'zaczynaj', 'rozpocznij', 'dalej', 'gotowy', 'gotowe']
-    stop_keywords = ['stop', 'stok', 'top', 'zatrzymaj', 'koniec', 'kończymy', 'pauza', 'czekaj']
+    start_keywords = ['zacznij', 'zaczynaj', 'zaczyna', 'rozpocznij', 'zaczynam']
+    stop_keywords = ['pauza', 'pauzuj', 'wstrzymaj', 'przerwa']
     
     while not stop_event.is_set():
         try:
@@ -122,11 +122,11 @@ def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
             
             if not analyzing_event.is_set():
                 if any(kw in text for kw in start_keywords):
-                    audio_handler.queue_speech("Rozpoczynam")
+                    audio_handler.queue_speech("Zaczynam")
                     analyzing_event.set()
             else:
                 if any(kw in text for kw in stop_keywords):
-                    audio_handler.queue_speech("Zatrzymuję")
+                    audio_handler.queue_speech("Pauza")
                     analyzing_event.clear()
                 
         except sr.WaitTimeoutError:
