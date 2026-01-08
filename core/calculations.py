@@ -28,15 +28,24 @@ def calculate_angle(point_a, point_b, point_c):
 
 
 def calculate_trunk_angle(shoulder, hip):
+    """Calculate trunk angle. Returns ~180 for upright stance, <180 for forward lean, >180 for backward lean."""
     spine_vector = np.array([shoulder[0] - hip[0], shoulder[1] - hip[1]])
-    vertical_axis = np.array([0, 1])
     
     spine_length = np.linalg.norm(spine_vector)
     if spine_length == 0:
-        return 0
+        return 180
     
-    cos_angle = np.clip(np.dot(spine_vector, vertical_axis) / spine_length, -1, 1)
-    return abs(math.degrees(math.acos(cos_angle)))
+    # Calculate horizontal deviation (positive = forward lean, negative = backward)
+    # In image coordinates, Y increases downward, so shoulder above hip means negative Y diff
+    # X deviation: positive means shoulder is to the right of hip
+    horizontal_deviation = spine_vector[0]  # X component
+    
+    # Calculate angle from vertical: atan2 gives signed angle
+    # For upright: spine_vector ≈ (0, negative) -> angle ≈ 0
+    angle_from_vertical = math.degrees(math.atan2(horizontal_deviation, -spine_vector[1]))
+    
+    # Return as 180 +/- deviation (180 = straight, <180 = forward, >180 = backward)
+    return 180 + angle_from_vertical
 
 
 def calculate_arm_verticality(shoulder, elbow):

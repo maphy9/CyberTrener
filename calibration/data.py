@@ -14,7 +14,7 @@ class CalibrationData:
         self.left_min_angle = 30
         self.left_max_angle = 170
         self.vertical_tolerance = 25
-        self.trunk_tolerance = 15
+        self.trunk_tolerance = 20
         self.calibrated = False
         self.calibration_date = None
     
@@ -37,7 +37,7 @@ class CalibrationData:
         self.vertical_tolerance = max(20, avg_verticality + 5)
         
         trunk_deviation = abs(self.neutral_trunk_angle - 180)
-        self.trunk_tolerance = max(10, trunk_deviation + 5)
+        self.trunk_tolerance = max(20, trunk_deviation + 10)
         
         self.calibrated = True
         self.calibration_date = datetime.now().isoformat()
