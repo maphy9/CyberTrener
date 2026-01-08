@@ -4,9 +4,91 @@ from threading import Thread, Event
 import time
 from audio import AudioHandler, listen_for_voice_commands
 from core.pose_drawing import draw_pose_with_errors
-from exercises.bicep_curl.exercise_controller import BicepCurlController
+from exercises.bicep_curl.controller import BicepCurlController
+from calibration.controller import CalibrationController
+from calibration.data import CalibrationData
 
 mp_pose = mp.solutions.pose # type: ignore
+
+
+def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
+    front_pose = mp_pose.Pose(
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+        model_complexity=1
+    )
+    profile_pose = mp_pose.Pose(
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+        model_complexity=1
+    )
+    
+    audio_handler = AudioHandler()
+    calibration = CalibrationController()
+    
+    audio_handler.queue_speech("Rozpoczynam kalibrację")
+    audio_handler.queue_speech(calibration.get_instructions())
+    
+    socketio.emit('calibration-step', {
+        'step': calibration.current_step,
+        'instruction': calibration.get_instructions()
+    })
+    
+    while not stop_event.is_set():
+        front_frame, front_was_read = front_stream.get()
+        profile_frame, profile_was_read = profile_stream.get()
+        
+        if front_frame is None or profile_frame is None:
+            continue
+        
+        if not front_was_read:
+            front_rgb = cv2.cvtColor(front_frame, cv2.COLOR_BGR2RGB)
+            front_rgb.flags.writeable = False
+            front_results = front_pose.process(front_rgb)
+            front_rgb.flags.writeable = True
+            draw_pose_with_errors(front_frame, front_results, {})
+        else:
+            front_results = None
+        
+        if not profile_was_read:
+            profile_rgb = cv2.cvtColor(profile_frame, cv2.COLOR_BGR2RGB)
+            profile_rgb.flags.writeable = False
+            profile_results = profile_pose.process(profile_rgb)
+            profile_rgb.flags.writeable = True
+            draw_pose_with_errors(profile_frame, profile_results, {})
+        else:
+            profile_results = None
+        
+        if front_results and profile_results:
+            step_complete, message = calibration.process_frames(front_results, profile_results)
+            
+            if step_complete:
+                if message:
+                    audio_handler.queue_speech(message)
+                
+                if calibration.is_complete():
+                    calibration_data = calibration.get_calibration_data()
+                    calibration_data.save()
+                    
+                    socketio.emit('calibration-complete', {
+                        'data': calibration_data.to_dict()
+                    })
+                    break
+                else:
+                    socketio.emit('calibration-step', {
+                        'step': calibration.current_step,
+                        'instruction': calibration.get_instructions()
+                    })
+        
+        _, front_img = cv2.imencode('.jpg', front_frame)
+        _, profile_img = cv2.imencode('.jpg', profile_frame)
+        
+        socketio.emit('front-frame', front_img.tobytes())
+        socketio.emit('profile-frame', profile_img.tobytes())
+    
+    audio_handler.stop()
+    front_stream.stop()
+    profile_stream.stop()
 
 
 def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
@@ -35,7 +117,8 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     
     socketio.emit('status', {'state': 'waiting'})
     
-    exercise = BicepCurlController()
+    calibration_data = CalibrationData.load()
+    exercise = BicepCurlController(calibration_data)
     
     error_states = {}
     last_error_spoken = {}

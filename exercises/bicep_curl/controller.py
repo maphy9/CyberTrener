@@ -4,15 +4,18 @@ from exercises.bicep_curl.form_checker import AlternatingBicepCurlValidator, ERR
 
 
 class BicepCurlController:
-    def __init__(self):
+    def __init__(self, calibration=None):
         self.front_analyzer = PoseAnalyzer(calculate_front_view)
         self.profile_analyzer = PoseAnalyzer(calculate_profile_view)
-        self.validator = AlternatingBicepCurlValidator()
+        self.validator = AlternatingBicepCurlValidator(calibration)
         
         self.prev_right_reps = 0
         self.prev_left_reps = 0
         self.valid_right_reps = 0
         self.valid_left_reps = 0
+        
+        if calibration:
+            print(f"Using calibration: flex {calibration.right_min_angle}-{calibration.right_max_angle}, vertical tol: {calibration.vertical_tolerance}")
     
     def process_frames(self, front_results, profile_results):
         self.front_analyzer.process_frame(front_results)

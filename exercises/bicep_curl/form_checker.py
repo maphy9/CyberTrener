@@ -1,11 +1,22 @@
-from exercises.bicep_curl.constants import TRUNK_ANGLE_THRESHOLD
+from exercises.bicep_curl.constants import TRUNK_ANGLE_THRESHOLD, VERTICAL_STANCE_THRESHOLD
 
 
 class AlternatingBicepCurlValidator:
-    def __init__(self):
+    def __init__(self, calibration=None):
+        self.calibration = calibration
         self.simultaneous_flex_occurred = False
         self.rep_history = []
         self.max_history = 10
+        
+        # Use calibration values if available, otherwise use defaults
+        if calibration and calibration.calibrated:
+            self.trunk_tolerance = calibration.trunk_tolerance
+            self.vertical_tolerance = calibration.vertical_tolerance
+            self.neutral_trunk_angle = calibration.neutral_trunk_angle
+        else:
+            self.trunk_tolerance = TRUNK_ANGLE_THRESHOLD
+            self.vertical_tolerance = VERTICAL_STANCE_THRESHOLD
+            self.neutral_trunk_angle = 180
     
     def check_simultaneous_flexion(self, front_metrics):
         right_phase = front_metrics.get('right_phase')
@@ -15,12 +26,16 @@ class AlternatingBicepCurlValidator:
             self.simultaneous_flex_occurred = True
     
     def validate_rep(self, side, front_metrics, profile_metrics):
-        right_stance_valid = front_metrics.get('right_stance_valid', True)
-        left_stance_valid = front_metrics.get('left_stance_valid', True)
+        # Check verticality using calibration tolerance
+        right_verticality = front_metrics.get('right_verticality', 0)
+        left_verticality = front_metrics.get('left_verticality', 0)
+        
+        right_stance_valid = right_verticality <= self.vertical_tolerance
+        left_stance_valid = left_verticality <= self.vertical_tolerance
         
         trunk_angle = profile_metrics.get('trunk_angle')
         trunk_valid = True
-        if trunk_angle is not None and abs(trunk_angle - 180) > TRUNK_ANGLE_THRESHOLD:
+        if trunk_angle is not None and abs(trunk_angle - self.neutral_trunk_angle) > self.trunk_tolerance:
             trunk_valid = False
         
         if not trunk_valid:
