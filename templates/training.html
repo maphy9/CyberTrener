@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PROJEKT CyberTrener - Trening</title>
-    <link rel="stylesheet" href="static/style.css" />
+    <link rel="stylesheet" href="static/colors.css" />
+    <link rel="stylesheet" href="static/training-style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
   </head>
   <body>
@@ -21,7 +22,7 @@
         <div class="main-column">
           <div class="camera-feed camera-front">
             <div class="camera-header">
-              <span class="camera-label"> 📹 Frontal camera </span>
+              <span class="camera-label"> 🔹 Frontal camera </span>
               <span class="camera-status">
                 <span class="status-dot" id="status-dot-front"></span>
                 <span id="status-front">Rozłączono</span>
@@ -29,7 +30,7 @@
             </div>
             <div class="camera-view">
               <div class="camera-placeholder" id="placeholder-front">
-                <div class="camera-placeholder-icon">📹</div>
+                <div class="camera-placeholder-icon">🔹</div>
                 <p>Widok z przodu</p>
                 <p style="font-size: 0.8rem; margin-top: 0.5rem">
                   Czeka na połączenie
@@ -38,12 +39,13 @@
               <img id="front-image" alt="" />
             </div>
           </div>
+          <p id="voice-status" class="voice-status"></p>
         </div>
 
         <div class="side-column">
           <div class="camera-feed camera-profile">
             <div class="camera-header">
-              <span class="camera-label"> 📹 Profile camera </span>
+              <span class="camera-label"> 🔹 Profile camera </span>
               <span class="camera-status">
                 <span class="status-dot" id="status-dot-profile"></span>
                 <span id="status-profile">Rozłączono</span>
@@ -51,7 +53,7 @@
             </div>
             <div class="camera-view">
               <div class="camera-placeholder" id="placeholder-profile">
-                <div class="camera-placeholder-icon">📹</div>
+                <div class="camera-placeholder-icon">🔹</div>
                 <p>Widok z boku</p>
                 <p style="font-size: 0.8rem; margin-top: 0.5rem">
                   Czeka na połączenie
@@ -62,9 +64,9 @@
           </div>
 
           <div class="controls-box">
-            <button class="btn btn-primary" id="btn-start">START</button>
-            <button class="btn btn-secondary" id="btn-stop" disabled>
-              STOP
+            <button class="btn btn-primary" id="btn-connect">CONNECT</button>
+            <button class="btn btn-secondary" id="btn-disconnect" disabled>
+              DISCONNECT
             </button>
           </div>
 
@@ -86,10 +88,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <div style="display: none !important">
-      <p id="tips-message"></p>
     </div>
 
     <script src="static/script.js"></script>

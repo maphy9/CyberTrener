@@ -13,6 +13,7 @@ class CameraStream:
         self.thread = None
         self.is_connected = True
         self.consecutive_failures = 0
+        self.was_read = True
     
     def start(self):
         self.running = True
@@ -27,16 +28,18 @@ class CameraStream:
                 with self.lock:
                     self.frame = frame
                     self.consecutive_failures = 0
+                    self.was_read = False
             else:
                 self.consecutive_failures += 1
-                if self.consecutive_failures > 30:
+                if self.consecutive_failures > 60:
                     self.is_connected = False
                     self.running = False
-            time.sleep(0.01)
     
     def get(self):
         with self.lock:
-            return self.frame
+            previous_was_read = self.was_read
+            self.was_read = True
+            return self.frame, previous_was_read
         
     def stop(self):
         self.running = False

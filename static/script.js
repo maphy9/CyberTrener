@@ -1,12 +1,18 @@
 let timerInterval;
 let seconds = 0;
 let timerStarted = false;
-let pressedStop = true;
+let isConnected = false;
+let isAnalyzing = false;
 
 const socket = io("http://localhost:5000");
 
-const btnStart = document.getElementById("btn-start");
-const btnStop = document.getElementById("btn-stop");
+const cameraSettings = JSON.parse(localStorage.getItem("cameraSettings")) || {
+  front: { type: "physical", value: 0 },
+  profile: { type: "ip", value: "" },
+};
+
+const btnConnect = document.getElementById("btn-connect");
+const btnDisconnect = document.getElementById("btn-disconnect");
 const frontImg = document.getElementById("front-image");
 const profileImg = document.getElementById("profile-image");
 const rightRepsSpan = document.getElementById("right-reps");
@@ -17,93 +23,7 @@ const statusDotFront = document.getElementById("status-dot-front");
 const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
-
-let prevRightReps = 0;
-let prevLeftReps = 0;
-let prevErrors = new Set();
-
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const speechSynth = window.speechSynthesis;
-const soundQueue = [];
-let isPlaying = false;
-
-function playBeep() {
-  return new Promise((resolve) => {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 800;
-    oscillator.type = "sine";
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.01,
-      audioContext.currentTime + 0.1
-    );
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
-
-    oscillator.onended = resolve;
-  });
-}
-
-function speakText(text) {
-  return new Promise((resolve) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-    utterance.onend = resolve;
-    utterance.onerror = resolve;
-    speechSynth.speak(utterance);
-  });
-}
-
-async function processQueue() {
-  if (isPlaying || soundQueue.length === 0) return;
-
-  isPlaying = true;
-  const sound = soundQueue.shift();
-
-  if (sound.type === "beep") {
-    await playBeep();
-  } else if (sound.type === "speech") {
-    await speakText(sound.text);
-  }
-
-  isPlaying = false;
-  processQueue();
-}
-
-function queueSound(sound) {
-  soundQueue.push(sound);
-  processQueue();
-}
-
-function startTimer() {
-  if (timerStarted) {
-    return;
-  }
-  timerStarted = true;
-  seconds = 0;
-  updateTimerDisplay();
-  timerInterval = setInterval(() => {
-    if (pressedStop) {
-      return;
-    }
-    seconds++;
-    updateTimerDisplay();
-  }, 1000);
-}
-
-function stopTimer() {
-  timerStarted = false;
-  clearInterval(timerInterval);
-}
+const voiceStatus = document.getElementById("voice-status");
 
 function updateTimerDisplay() {
   const mins = Math.floor(seconds / 60)
@@ -116,26 +36,71 @@ function updateTimerDisplay() {
   }
 }
 
-btnStart.addEventListener("click", () => {
-  pressedStop = false;
-  socket.emit("start-session");
-  btnStart.disabled = true;
-  btnStop.disabled = false;
-  prevRightReps = 0;
-  prevLeftReps = 0;
-  prevErrors.clear();
+function startTimer() {
+  if (!timerStarted) {
+    timerStarted = true;
+    timerInterval = setInterval(() => {
+      if (isAnalyzing) {
+        seconds++;
+        updateTimerDisplay();
+      }
+    }, 1000);
+  }
+}
+
+function stopTimer() {
+  timerStarted = false;
+  clearInterval(timerInterval);
+}
+
+function resetTimer() {
+  stopTimer();
+  seconds = 0;
+  updateTimerDisplay();
+}
+
+function setVoiceStatus(message) {
+  if (voiceStatus) {
+    voiceStatus.textContent = message;
+    voiceStatus.classList.add("visible");
+  }
+}
+
+function clearVoiceStatus() {
+  if (voiceStatus) {
+    voiceStatus.textContent = "";
+    voiceStatus.classList.remove("visible");
+  }
+}
+
+btnConnect.addEventListener("click", () => {
+  socket.emit("start-session", cameraSettings);
+  btnConnect.disabled = true;
+  btnDisconnect.disabled = false;
+  isConnected = true;
 });
 
-btnStop.addEventListener("click", () => {
-  pressedStop = true;
+btnDisconnect.addEventListener("click", () => {
   socket.emit("end-session");
+  fullDisconnect();
+});
+
+function fullDisconnect() {
+  isConnected = false;
+  isAnalyzing = false;
+
+  resetTimer();
   resetUI();
-  stopTimer();
+  clearVoiceStatus();
+
   statusFront.textContent = "Rozłączono";
   statusDotFront.style.background = "var(--bad)";
   statusProfile.textContent = "Rozłączono";
   statusDotProfile.style.background = "var(--bad)";
-});
+
+  btnConnect.disabled = false;
+  btnDisconnect.disabled = true;
+}
 
 function changeStateToConnected() {
   statusFront.textContent = "Połączono";
@@ -144,52 +109,46 @@ function changeStateToConnected() {
   statusDotProfile.style.background = "var(--perfect)";
 }
 
-socket.on("front-frame", (data) => {
-  if (pressedStop) {
-    return;
+socket.on("status", (data) => {
+  if (data.state === "waiting") {
+    isAnalyzing = false;
+    setVoiceStatus("Powiedz 'zacznij' aby rozpocząć");
+  } else if (data.state === "analyzing") {
+    isAnalyzing = true;
+    setVoiceStatus("Powiedz 'pauza' aby zatrzymać");
+    startTimer();
   }
-  startTimer();
+});
+
+socket.on("connection-error", (data) => {
+  alert(
+    `Błąd połączenia z kamerą: ${data.message}\nSprawdź ustawienia kamer na stronie głównej.`
+  );
+  fullDisconnect();
+});
+
+socket.on("front-frame", (data) => {
+  if (!isConnected) return;
   changeStateToConnected();
   updateImage(frontImg, data, placeholderFront);
 });
 
 socket.on("profile-frame", (data) => {
-  if (pressedStop) {
-    return;
-  }
-  startTimer();
+  if (!isConnected) return;
   changeStateToConnected();
   updateImage(profileImg, data, placeholderProfile);
 });
 
 socket.on("metrics", (data) => {
-  if (data.right_reps > prevRightReps) {
-    queueSound({ type: "beep" });
-    prevRightReps = data.right_reps;
-  }
-
-  if (data.left_reps > prevLeftReps) {
-    queueSound({ type: "beep" });
-    prevLeftReps = data.left_reps;
-  }
-
   if (rightRepsSpan) rightRepsSpan.textContent = data.right_reps;
   if (leftRepsSpan) leftRepsSpan.textContent = data.left_reps;
+});
 
-  if (data.errors && data.errors.length > 0) {
-    data.errors.forEach((error) => {
-      if (!prevErrors.has(error)) {
-        queueSound({ type: "speech", text: error });
-        prevErrors.add(error);
-      }
-    });
-  }
+socket.on("session-ended", () => {
+  fullDisconnect();
 });
 
 function resetUI() {
-  if (btnStart) btnStart.disabled = false;
-  if (btnStop) btnStop.disabled = true;
-
   if (frontImg) {
     frontImg.style.display = "none";
     frontImg.src = "";
@@ -204,12 +163,6 @@ function resetUI() {
 
   if (rightRepsSpan) rightRepsSpan.textContent = "0";
   if (leftRepsSpan) leftRepsSpan.textContent = "0";
-
-  prevRightReps = 0;
-  prevLeftReps = 0;
-  prevErrors.clear();
-  soundQueue.length = 0;
-  speechSynth.cancel();
 }
 
 function updateImage(imgElement, data, placeholder) {
@@ -218,11 +171,6 @@ function updateImage(imgElement, data, placeholder) {
   const url = URL.createObjectURL(blob);
 
   imgElement.onload = function () {
-    console.log(
-      `Dimensions: ${imgElement.naturalWidth}px x ${imgElement.naturalHeight}px`
-    );
-
-    // Optional: Clean up the event listener so it doesn't pile up
     imgElement.onload = null;
   };
 

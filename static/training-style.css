@@ -1,171 +1,3 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --primary: #00d4ff;
-  --secondary: #00ff88;
-  --dark: #0a0a0f;
-  --dark-light: #12121a;
-  --dark-card: #1a1a24;
-  --text: #ffffff;
-  --text-muted: #8888aa;
-  --bad: #ff4757;
-  --good: #ffa502;
-  --great: #00d4ff;
-  --perfect: #00ff88;
-}
-
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--dark);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-.home-page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  background: radial-gradient(
-      ellipse at top,
-      rgba(0, 212, 255, 0.08) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at bottom,
-      rgba(0, 255, 136, 0.05) 0%,
-      transparent 50%
-    ),
-    var(--dark);
-}
-
-.logo {
-  margin-bottom: 1rem;
-}
-
-.logo-icon {
-  width: 80px;
-  height: 80px;
-  border: 3px solid var(--primary);
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 212, 255, 0.1),
-    rgba(0, 255, 136, 0.1)
-  );
-  position: relative;
-  overflow: hidden;
-}
-
-.logo-icon::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(0, 212, 255, 0.1),
-    transparent
-  );
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) rotate(45deg);
-  }
-}
-
-.app-title {
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: 4px;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.app-subtitle {
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  margin-bottom: 4rem;
-  letter-spacing: 2px;
-}
-
-.menu-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  width: 100%;
-  max-width: 320px;
-}
-
-.btn {
-  padding: 1.2rem 2.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  position: relative;
-  overflow: hidden;
-  text-decoration: none;
-  display: inline-block;
-  text-align: center;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary), #0099cc);
-  color: var(--dark);
-  box-shadow: 0 4px 30px rgba(0, 212, 255, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 40px rgba(0, 212, 255, 0.5);
-}
-
-.btn-secondary {
-  background: var(--dark-card);
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-secondary:hover {
-  background: var(--dark-light);
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.version {
-  position: absolute;
-  bottom: 2rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
 .training-page {
   display: flex !important;
   height: 100vh;
@@ -238,6 +70,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  gap: 1rem;
 }
 
 .camera-feed {
@@ -252,6 +85,25 @@ body {
 .camera-front {
   flex: 1;
   min-height: 0;
+}
+
+.voice-status {
+  font-size: 1.2rem;
+  color: var(--primary);
+  text-align: center;
+  padding: 1rem;
+  background: var(--dark-card);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  display: none;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-status.visible {
+  display: flex;
 }
 
 .side-column {
@@ -410,6 +262,7 @@ body {
 .stat-value.primary {
   color: var(--primary);
 }
+
 .stat-value.secondary {
   color: var(--secondary);
 }
@@ -438,14 +291,12 @@ body {
 }
 
 @media (max-width: 600px) {
-  .app-title {
-    font-size: 2rem;
-  }
   .training-header {
     flex-wrap: wrap;
     gap: 0.8rem;
     justify-content: center;
   }
+
   .exercise-name {
     order: 3;
     width: 100%;
