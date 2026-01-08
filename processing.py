@@ -106,7 +106,7 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     audio_handler = AudioHandler()
     analyzing_event = Event()
     
-    audio_handler.queue_speech("Powiedz 'start' aby rozpocząć")
+    audio_handler.queue_speech("Powiedz 'zacznij' aby rozpocząć")
     
     voice_thread = Thread(
         target=listen_for_voice_commands,
