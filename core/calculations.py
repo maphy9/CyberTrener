@@ -88,6 +88,97 @@ def smooth_value(current_value, previous_value, smoothing_factor=0.25):
     return smoothing_factor * current_value + (1 - smoothing_factor) * previous_value
 
 
+def adaptive_smooth_value(current_value, previous_value, base_smoothing=0.25, velocity_threshold=5.0):
+    """
+    Adaptive smoothing that reduces lag during fast movements.
+    - Slow movement: higher smoothing (more stable)
+    - Fast movement: lower smoothing (more responsive)
+    
+    Returns:
+        tuple: (smoothed_value, velocity)
+    """
+    if previous_value is None:
+        return current_value, 0.0
+    
+    velocity = abs(current_value - previous_value)
+    
+    if velocity > velocity_threshold:
+        # Fast movement: reduce smoothing for responsiveness
+        adaptive_factor = max(0.5, base_smoothing * (velocity_threshold / velocity))
+    else:
+        # Slow movement: increase smoothing for stability
+        adaptive_factor = min(0.15, base_smoothing * (1 - velocity / velocity_threshold * 0.5))
+    
+    smoothed = adaptive_factor * current_value + (1 - adaptive_factor) * previous_value
+    return smoothed, velocity
+
+
+def exponential_moving_average(current_value, ema_value, alpha=0.3):
+    """Standard EMA for consistent smoothing."""
+    if ema_value is None:
+        return current_value
+    return alpha * current_value + (1 - alpha) * ema_value
+
+
+class AdaptiveSmoother:
+    """
+    Stateful adaptive smoother that tracks velocity and adjusts smoothing dynamically.
+    Useful for per-joint smoothing with independent state.
+    """
+    
+    def __init__(self, base_smoothing=0.25, velocity_threshold=5.0, velocity_smoothing=0.3):
+        self.base_smoothing = base_smoothing
+        self.velocity_threshold = velocity_threshold
+        self.velocity_smoothing = velocity_smoothing
+        self.previous_value = None
+        self.smoothed_velocity = 0.0
+    
+    def update(self, current_value):
+        """
+        Update smoother with new value.
+        
+        Returns:
+            float: Smoothed value
+        """
+        if self.previous_value is None:
+            self.previous_value = current_value
+            return current_value
+        
+        # Calculate instantaneous velocity
+        instant_velocity = abs(current_value - self.previous_value)
+        
+        # Smooth the velocity to avoid jitter
+        self.smoothed_velocity = (
+            self.velocity_smoothing * instant_velocity + 
+            (1 - self.velocity_smoothing) * self.smoothed_velocity
+        )
+        
+        # Determine adaptive smoothing factor
+        if self.smoothed_velocity > self.velocity_threshold:
+            # Fast movement: more responsive (higher factor = less smoothing)
+            ratio = min(2.0, self.smoothed_velocity / self.velocity_threshold)
+            adaptive_factor = min(0.6, self.base_smoothing * ratio)
+        else:
+            # Slow movement: more stable (lower factor = more smoothing)
+            ratio = self.smoothed_velocity / self.velocity_threshold
+            adaptive_factor = max(0.1, self.base_smoothing * (0.5 + 0.5 * ratio))
+        
+        # Apply smoothing
+        smoothed = adaptive_factor * current_value + (1 - adaptive_factor) * self.previous_value
+        self.previous_value = smoothed
+        
+        return smoothed
+    
+    def reset(self):
+        """Reset smoother state."""
+        self.previous_value = None
+        self.smoothed_velocity = 0.0
+    
+    def get_velocity(self):
+        """Get current smoothed velocity."""
+        return self.smoothed_velocity
+
+
 def detect_phase(angle, flex_threshold=80, extend_threshold=120):
     if angle <= flex_threshold:
         return 'flexed'
