@@ -175,14 +175,37 @@
 .menu-buttons {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
   max-width: 320px;
 }
 
+.menu-buttons .btn-secondary {
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+}
+
+.menu-buttons .btn-secondary:hover {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.calibration-status {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.calibration-status.calibrated {
+  color: var(--perfect);
+}
+
+.calibration-status.not-calibrated {
+  color: var(--warning);
+}
+
 .version {
-  position: absolute;
-  bottom: 2rem;
+  margin-top: 2rem;
   color: var(--text-muted);
   font-size: 0.85rem;
 }

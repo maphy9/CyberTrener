@@ -3,6 +3,7 @@ let seconds = 0;
 let timerStarted = false;
 let isConnected = false;
 let isAnalyzing = false;
+let isCalibrating = false;
 
 const socket = io("http://localhost:5000");
 
@@ -10,6 +11,8 @@ const cameraSettings = JSON.parse(localStorage.getItem("cameraSettings")) || {
   front: { type: "physical", value: 0 },
   profile: { type: "ip", value: "" },
 };
+
+const sessionMode = localStorage.getItem("sessionMode") || "training";
 
 const btnConnect = document.getElementById("btn-connect");
 const btnDisconnect = document.getElementById("btn-disconnect");
@@ -74,10 +77,18 @@ function clearVoiceStatus() {
 }
 
 btnConnect.addEventListener("click", () => {
-  socket.emit("start-session", cameraSettings);
+  socket.emit("start-session", {
+    cameras: cameraSettings,
+    mode: sessionMode
+  });
   btnConnect.disabled = true;
   btnDisconnect.disabled = false;
   isConnected = true;
+  
+  if (sessionMode === "calibration") {
+    isCalibrating = true;
+    setVoiceStatus("Rozpoczynam kalibrację...");
+  }
 });
 
 btnDisconnect.addEventListener("click", () => {
@@ -142,6 +153,20 @@ socket.on("profile-frame", (data) => {
 socket.on("metrics", (data) => {
   if (rightRepsSpan) rightRepsSpan.textContent = data.right_reps;
   if (leftRepsSpan) leftRepsSpan.textContent = data.left_reps;
+});
+
+socket.on("calibration-step", (data) => {
+  setVoiceStatus(data.instruction);
+});
+
+socket.on("calibration-complete", (data) => {
+  isCalibrating = false;
+  setVoiceStatus("Kalibracja zakończona! Przekierowuję...");
+  localStorage.setItem("sessionMode", "training");
+  setTimeout(() => {
+    socket.emit("end-session");
+    window.location.href = "/";
+  }, 2000);
 });
 
 socket.on("session-ended", () => {

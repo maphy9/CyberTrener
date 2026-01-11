@@ -90,6 +90,7 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
         socketio.emit('front-frame', front_img.tobytes())
         socketio.emit('profile-frame', profile_img.tobytes())
     
+    socketio.emit('session-ended')
     audio_handler.stop()
     front_stream.stop()
     profile_stream.stop()

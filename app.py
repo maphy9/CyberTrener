@@ -1,9 +1,10 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
 from threading import Thread, Event
 from camera import CameraStream
 from core.constants import *
-from processing import process_camera_streams
+from processing import process_camera_streams, run_calibration_session
+from calibration.data import CalibrationData
 
 processing_event = Event()
 processing_thread = None
@@ -18,6 +19,14 @@ def handle_index():
 @app.route('/training')
 def handle_training():
     return render_template('training.html')
+
+@app.route('/api/calibration-status')
+def handle_calibration_status():
+    calibration = CalibrationData.load()
+    if calibration and calibration.calibrated:
+        date_str = calibration.calibration_date[:10] if calibration.calibration_date else "Nieznana data"
+        return jsonify({'calibrated': True, 'date': date_str})
+    return jsonify({'calibrated': False, 'date': None})
 
 @socketio.on('connect')
 def handle_connect():
@@ -35,12 +44,16 @@ def handle_disconnect():
     print('Session ended')
 
 @socketio.on('start-session')
-def handle_start_session(camera_config):
+def handle_start_session(data):
     global processing_thread
     if not processing_event.is_set():
         print('Server can handle one session at a time')
         return
-    print('New session started')
+    
+    camera_config = data.get('cameras', data)
+    session_mode = data.get('mode', 'training')
+    
+    print(f'New {session_mode} session started')
     print(f'Camera config: {camera_config}')
     processing_event.clear()
 
@@ -72,8 +85,13 @@ def handle_start_session(camera_config):
             emit('connection-error', {'message': 'Nie można połączyć się z jedną lub obiema kamerami'})
             return
 
+        if session_mode == 'calibration':
+            target_fn = run_calibration_session
+        else:
+            target_fn = process_camera_streams
+
         processing_thread = Thread(
-            target=process_camera_streams,
+            target=target_fn,
             args=(socketio, front_camera_stream, profile_camera_stream, processing_event),
             daemon=True
         )
