@@ -27,6 +27,9 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
     audio_handler = AudioHandler()
     calibration = CalibrationController()
     
+    reset_front_view_state()
+    reset_profile_view_state()
+    
     audio_handler.queue_speech("Rozpoczynam kalibrację")
     audio_handler.queue_speech(calibration.get_instructions())
     
