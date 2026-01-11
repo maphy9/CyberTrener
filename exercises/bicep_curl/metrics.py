@@ -1,5 +1,8 @@
 from core.calculations import (
     extract_pose_landmarks,
+    extract_pose_landmarks_filtered,
+    get_landmark_confidence,
+    check_landmarks_visible,
     calculate_angle,
     calculate_arm_verticality,
     calculate_elbow_to_torso_distance,
@@ -12,6 +15,18 @@ from core.calculations import (
 from core.constants import *
 from exercises.bicep_curl.constants import *
 
+
+FRONT_REQUIRED_LANDMARKS = [
+    POSE_RIGHT_SHOULDER, POSE_LEFT_SHOULDER,
+    POSE_RIGHT_ELBOW, POSE_LEFT_ELBOW,
+    POSE_RIGHT_WRIST, POSE_LEFT_WRIST
+]
+
+PROFILE_REQUIRED_LANDMARKS = [
+    POSE_RIGHT_SHOULDER, POSE_LEFT_SHOULDER,
+    POSE_RIGHT_ELBOW, POSE_RIGHT_WRIST,
+    POSE_RIGHT_HIP, POSE_LEFT_HIP
+]
 
 _front_smoothers = {
     'right_angle': AdaptiveSmoother(base_smoothing=0.3, velocity_threshold=8.0),
@@ -58,7 +73,12 @@ def calculate_front_view(results, history):
     if not landmarks:
         return None
     
+    if not check_landmarks_visible(landmarks, FRONT_REQUIRED_LANDMARKS):
+        return None
+    
     prev = history[-1] if history else {}
+    
+    confidence = get_landmark_confidence(landmarks, FRONT_REQUIRED_LANDMARKS)
     
     right_shoulder = landmarks[POSE_RIGHT_SHOULDER]
     left_shoulder = landmarks[POSE_LEFT_SHOULDER]
@@ -148,6 +168,7 @@ def calculate_front_view(results, history):
         'left_rep_flag': left_rep_flag,
         'right_velocity': _front_smoothers['right_angle'].get_velocity(),
         'left_velocity': _front_smoothers['left_angle'].get_velocity(),
+        'confidence': round(confidence, 2),
     }
 
 
@@ -156,7 +177,12 @@ def calculate_profile_view(results, history):
     if not landmarks:
         return None
     
+    if not check_landmarks_visible(landmarks, PROFILE_REQUIRED_LANDMARKS):
+        return None
+    
     prev = history[-1] if history else {}
+    
+    confidence = get_landmark_confidence(landmarks, PROFILE_REQUIRED_LANDMARKS)
         
     right_shoulder = landmarks[POSE_RIGHT_SHOULDER]
     left_shoulder = landmarks[POSE_LEFT_SHOULDER]
@@ -202,4 +228,5 @@ def calculate_profile_view(results, history):
         'right_rep_flag': right_rep_flag,
         'right_velocity': _profile_smoothers['right_angle'].get_velocity(),
         'trunk_velocity': _profile_smoothers['trunk_angle'].get_velocity(),
+        'confidence': round(confidence, 2),
     }

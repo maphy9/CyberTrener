@@ -2,6 +2,9 @@ import math
 import numpy as np
 
 
+MIN_LANDMARK_VISIBILITY = 0.5
+
+
 def extract_pose_landmarks(results):
     landmarks = {}
     try:
@@ -11,6 +14,53 @@ def extract_pose_landmarks(results):
     for i, lm in enumerate(landmark_list):
         landmarks[i] = (lm.x, lm.y, getattr(lm, 'visibility', 0))
     return landmarks
+
+
+def extract_pose_landmarks_filtered(results, min_visibility=None, required_landmarks=None):
+    if min_visibility is None:
+        min_visibility = MIN_LANDMARK_VISIBILITY
+    
+    landmarks = {}
+    try:
+        landmark_list = results.pose_landmarks.landmark
+    except Exception:
+        return None
+    
+    for i, lm in enumerate(landmark_list):
+        visibility = getattr(lm, 'visibility', 0)
+        landmarks[i] = (lm.x, lm.y, visibility)
+    
+    if required_landmarks:
+        for idx in required_landmarks:
+            if idx not in landmarks or landmarks[idx][2] < min_visibility:
+                return None
+    
+    return landmarks
+
+
+def get_landmark_confidence(landmarks, indices):
+    if not landmarks:
+        return 0.0
+    
+    visibilities = []
+    for i in indices:
+        if i in landmarks:
+            visibilities.append(landmarks[i][2])
+    
+    return sum(visibilities) / len(visibilities) if visibilities else 0.0
+
+
+def check_landmarks_visible(landmarks, indices, min_visibility=None):
+    if min_visibility is None:
+        min_visibility = MIN_LANDMARK_VISIBILITY
+    
+    if not landmarks:
+        return False
+    
+    for idx in indices:
+        if idx not in landmarks or landmarks[idx][2] < min_visibility:
+            return False
+    return True
 
 
 def calculate_angle(point_a, point_b, point_c):
