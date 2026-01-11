@@ -27,6 +27,65 @@ const statusDotProfile = document.getElementById("status-dot-profile");
 const placeholderFront = document.getElementById("placeholder-front");
 const placeholderProfile = document.getElementById("placeholder-profile");
 const voiceStatus = document.getElementById("voice-status");
+const calibrationBox = document.getElementById("calibration-box");
+const calibrationStepText = document.getElementById("calibration-step-text");
+const calibrationInstruction = document.getElementById("calibration-instruction");
+const calibrationProgress = document.getElementById("calibration-progress");
+
+const STEP_NAMES = {
+  neutral: "Pozycja neutralna",
+  right_flex: "Prawa ręka - zgięcie",
+  right_extend: "Prawa ręka - wyprost",
+  left_flex: "Lewa ręka - zgięcie",
+  left_extend: "Lewa ręka - wyprost",
+  complete: "Zakończono"
+};
+
+const STEP_ORDER = ["neutral", "right_flex", "right_extend", "left_flex", "left_extend"];
+
+function showCalibrationUI() {
+  if (calibrationBox) {
+    calibrationBox.style.display = "block";
+  }
+  const statsCompact = document.querySelector(".stats-compact");
+  if (statsCompact) {
+    statsCompact.style.display = "none";
+  }
+}
+
+function hideCalibrationUI() {
+  if (calibrationBox) {
+    calibrationBox.style.display = "none";
+  }
+  const statsCompact = document.querySelector(".stats-compact");
+  if (statsCompact) {
+    statsCompact.style.display = "block";
+  }
+}
+
+function updateCalibrationStep(step, instruction) {
+  if (calibrationStepText) {
+    calibrationStepText.textContent = STEP_NAMES[step] || step;
+  }
+  if (calibrationInstruction) {
+    calibrationInstruction.textContent = instruction;
+  }
+  
+  const stepIndex = STEP_ORDER.indexOf(step);
+  const progress = stepIndex >= 0 ? ((stepIndex) / STEP_ORDER.length) * 100 : 0;
+  if (calibrationProgress) {
+    calibrationProgress.style.width = progress + "%";
+  }
+  
+  document.querySelectorAll(".step-dot").forEach((dot, i) => {
+    dot.classList.remove("active", "completed");
+    if (i < stepIndex) {
+      dot.classList.add("completed");
+    } else if (i === stepIndex) {
+      dot.classList.add("active");
+    }
+  });
+}
 
 function updateTimerDisplay() {
   const mins = Math.floor(seconds / 60)
@@ -156,14 +215,32 @@ socket.on("metrics", (data) => {
 });
 
 socket.on("calibration-step", (data) => {
+  showCalibrationUI();
+  updateCalibrationStep(data.step, data.instruction);
   setVoiceStatus(data.instruction);
 });
 
 socket.on("calibration-complete", (data) => {
   isCalibrating = false;
+  
+  if (calibrationProgress) {
+    calibrationProgress.style.width = "100%";
+  }
+  document.querySelectorAll(".step-dot").forEach((dot) => {
+    dot.classList.add("completed");
+    dot.classList.remove("active");
+  });
+  if (calibrationStepText) {
+    calibrationStepText.textContent = "Zakończono!";
+  }
+  if (calibrationInstruction) {
+    calibrationInstruction.textContent = "Kalibracja zakończona pomyślnie.";
+  }
+  
   setVoiceStatus("Kalibracja zakończona! Przekierowuję...");
   localStorage.setItem("sessionMode", "training");
   setTimeout(() => {
+    hideCalibrationUI();
     socket.emit("end-session");
     window.location.href = "/";
   }, 2000);
