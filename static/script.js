@@ -135,19 +135,38 @@ function clearVoiceStatus() {
   }
 }
 
+function showCalibrationLoading() {
+  showCalibrationUI();
+  if (calibrationStepText) {
+    calibrationStepText.textContent = "Inicjalizacja...";
+  }
+  if (calibrationInstruction) {
+    calibrationInstruction.textContent = "Łączenie z kamerami...";
+  }
+  if (calibrationProgress) {
+    calibrationProgress.style.width = "0%";
+  }
+  document.querySelectorAll(".step-dot").forEach((dot) => {
+    dot.classList.remove("active", "completed");
+  });
+}
+
 btnConnect.addEventListener("click", () => {
+  btnConnect.disabled = true;
+  btnConnect.textContent = "ŁĄCZENIE...";
+  
+  if (sessionMode === "calibration") {
+    isCalibrating = true;
+    showCalibrationLoading();
+    setVoiceStatus("Łączenie z kamerami...");
+  }
+  
   socket.emit("start-session", {
     cameras: cameraSettings,
     mode: sessionMode
   });
-  btnConnect.disabled = true;
   btnDisconnect.disabled = false;
   isConnected = true;
-  
-  if (sessionMode === "calibration") {
-    isCalibrating = true;
-    setVoiceStatus("Rozpoczynam kalibrację...");
-  }
 });
 
 btnDisconnect.addEventListener("click", () => {
@@ -158,6 +177,7 @@ btnDisconnect.addEventListener("click", () => {
 function fullDisconnect() {
   isConnected = false;
   isAnalyzing = false;
+  btnConnect.textContent = "CONNECT";
 
   resetTimer();
   resetUI();
@@ -195,6 +215,9 @@ socket.on("connection-error", (data) => {
     `Błąd połączenia z kamerą: ${data.message}\nSprawdź ustawienia kamer na stronie głównej.`
   );
   fullDisconnect();
+  if (sessionMode === "calibration") {
+    hideCalibrationUI();
+  }
 });
 
 socket.on("front-frame", (data) => {
