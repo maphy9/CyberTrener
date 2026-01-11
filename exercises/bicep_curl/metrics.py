@@ -1,6 +1,56 @@
-from core.calculations import *
+from core.calculations import (
+    extract_pose_landmarks,
+    calculate_angle,
+    calculate_arm_verticality,
+    calculate_elbow_to_torso_distance,
+    calculate_wrist_to_shoulder_distance,
+    calculate_trunk_angle,
+    AdaptiveSmoother,
+    PhaseDetector,
+    detect_phase_with_hysteresis
+)
 from core.constants import *
 from exercises.bicep_curl.constants import *
+
+
+_front_smoothers = {
+    'right_angle': AdaptiveSmoother(base_smoothing=0.3, velocity_threshold=8.0),
+    'left_angle': AdaptiveSmoother(base_smoothing=0.3, velocity_threshold=8.0),
+    'right_elbow_dist': AdaptiveSmoother(base_smoothing=0.4, velocity_threshold=0.05),
+    'left_elbow_dist': AdaptiveSmoother(base_smoothing=0.4, velocity_threshold=0.05),
+    'right_wrist_dist': AdaptiveSmoother(base_smoothing=0.35, velocity_threshold=0.03),
+    'left_wrist_dist': AdaptiveSmoother(base_smoothing=0.35, velocity_threshold=0.03),
+}
+
+_front_phase_detectors = {
+    'right': PhaseDetector(flex_threshold=FRONT_FLEX_THRESHOLD, extend_threshold=FRONT_EXTEND_THRESHOLD, hysteresis=10),
+    'left': PhaseDetector(flex_threshold=FRONT_FLEX_THRESHOLD, extend_threshold=FRONT_EXTEND_THRESHOLD, hysteresis=10),
+}
+
+_profile_smoothers = {
+    'right_angle': AdaptiveSmoother(base_smoothing=0.3, velocity_threshold=8.0),
+    'trunk_angle': AdaptiveSmoother(base_smoothing=0.4, velocity_threshold=3.0),
+    'right_wrist_dist': AdaptiveSmoother(base_smoothing=0.35, velocity_threshold=0.03),
+}
+
+_profile_phase_detector = PhaseDetector(
+    flex_threshold=PROFILE_FLEX_THRESHOLD, 
+    extend_threshold=PROFILE_EXTEND_THRESHOLD, 
+    hysteresis=10
+)
+
+
+def reset_front_view_state():
+    for smoother in _front_smoothers.values():
+        smoother.reset()
+    for detector in _front_phase_detectors.values():
+        detector.reset()
+
+
+def reset_profile_view_state():
+    for smoother in _profile_smoothers.values():
+        smoother.reset()
+    _profile_phase_detector.reset()
 
 
 def calculate_front_view(results, history):
@@ -20,8 +70,8 @@ def calculate_front_view(results, history):
     right_angle_raw = calculate_angle(right_shoulder, right_elbow, right_wrist)
     left_angle_raw = calculate_angle(left_shoulder, left_elbow, left_wrist)
     
-    right_angle_smooth = smooth_value(right_angle_raw, prev.get('right_angle_smooth'), FRONT_ANGLE_SMOOTHING)
-    left_angle_smooth = smooth_value(left_angle_raw, prev.get('left_angle_smooth'), FRONT_ANGLE_SMOOTHING)
+    right_angle_smooth = _front_smoothers['right_angle'].update(right_angle_raw)
+    left_angle_smooth = _front_smoothers['left_angle'].update(left_angle_raw)
     
     right_verticality = calculate_arm_verticality(right_shoulder, right_elbow)
     left_verticality = calculate_arm_verticality(left_shoulder, left_elbow)
@@ -29,45 +79,17 @@ def calculate_front_view(results, history):
     right_dist_raw = calculate_elbow_to_torso_distance(right_elbow, right_shoulder, left_shoulder)
     left_dist_raw = calculate_elbow_to_torso_distance(left_elbow, right_shoulder, left_shoulder)
     
-    right_elbow_dist_smooth = smooth_value(right_dist_raw, prev.get('right_elbow_dist_smooth'), FRONT_ELBOW_DIST_SMOOTHING)
-    left_elbow_dist_smooth = smooth_value(left_dist_raw, prev.get('left_elbow_dist_smooth'), FRONT_ELBOW_DIST_SMOOTHING)
+    right_elbow_dist_smooth = _front_smoothers['right_elbow_dist'].update(right_dist_raw)
+    left_elbow_dist_smooth = _front_smoothers['left_elbow_dist'].update(left_dist_raw)
     
     right_wrist_dist_raw = calculate_wrist_to_shoulder_distance(right_wrist, right_shoulder)
     left_wrist_dist_raw = calculate_wrist_to_shoulder_distance(left_wrist, left_shoulder)
     
-    right_wrist_dist_smooth = smooth_value(right_wrist_dist_raw, prev.get('right_wrist_dist_smooth'), FRONT_WRIST_DIST_SMOOTHING)
-    left_wrist_dist_smooth = smooth_value(left_wrist_dist_raw, prev.get('left_wrist_dist_smooth'), FRONT_WRIST_DIST_SMOOTHING)
+    right_wrist_dist_smooth = _front_smoothers['right_wrist_dist'].update(right_wrist_dist_raw)
+    left_wrist_dist_smooth = _front_smoothers['left_wrist_dist'].update(left_wrist_dist_raw)
     
-    right_phase_detected = detect_phase(right_angle_smooth, FRONT_FLEX_THRESHOLD, FRONT_EXTEND_THRESHOLD)
-    left_phase_detected = detect_phase(left_angle_smooth, FRONT_FLEX_THRESHOLD, FRONT_EXTEND_THRESHOLD)
-    
-    right_phase = prev.get('right_phase', 'unknown')
-    right_phase_count = prev.get('right_phase_count', 0)
-    right_prev_phase = prev.get('right_prev_phase', 'unknown')
-    
-    if right_phase_detected == 'middle':
-        right_phase = 'middle'
-    elif right_phase_detected == right_prev_phase:
-        right_phase_count += 1
-        if right_phase_count >= STABILITY_FRAMES:
-            right_phase = right_phase_detected
-    else:
-        right_phase_count = 1
-        right_prev_phase = right_phase_detected
-    
-    left_phase = prev.get('left_phase', 'unknown')
-    left_phase_count = prev.get('left_phase_count', 0)
-    left_prev_phase = prev.get('left_prev_phase', 'unknown')
-    
-    if left_phase_detected == 'middle':
-        left_phase = 'middle'
-    elif left_phase_detected == left_prev_phase:
-        left_phase_count += 1
-        if left_phase_count >= STABILITY_FRAMES:
-            left_phase = left_phase_detected
-    else:
-        left_phase_count = 1
-        left_prev_phase = left_phase_detected
+    right_phase = _front_phase_detectors['right'].update(right_angle_smooth)
+    left_phase = _front_phase_detectors['left'].update(left_angle_smooth)
     
     right_reps = prev.get('right_reps', 0)
     right_rep_flag = prev.get('right_rep_flag', False)
@@ -79,9 +101,9 @@ def calculate_front_view(results, history):
     if right_verticality > VERTICAL_STANCE_THRESHOLD:
         right_stance_valid = False
     
-    if right_phase == 'flexed':
+    if right_phase == 'flexed' and _front_phase_detectors['right'].is_stable(3):
         right_rep_flag = True
-    elif right_phase == 'extended' and right_rep_flag:
+    elif right_phase == 'extended' and right_rep_flag and _front_phase_detectors['right'].is_stable(3):
         right_reps += 1
         right_rep_flag = False
     
@@ -95,9 +117,9 @@ def calculate_front_view(results, history):
     if left_verticality > VERTICAL_STANCE_THRESHOLD:
         left_stance_valid = False
     
-    if left_phase == 'flexed':
+    if left_phase == 'flexed' and _front_phase_detectors['left'].is_stable(3):
         left_rep_flag = True
-    elif left_phase == 'extended' and left_rep_flag:
+    elif left_phase == 'extended' and left_rep_flag and _front_phase_detectors['left'].is_stable(3):
         left_reps += 1
         left_rep_flag = False
     
@@ -122,12 +144,10 @@ def calculate_front_view(results, history):
         'left_elbow_dist_smooth': left_elbow_dist_smooth,
         'right_wrist_dist_smooth': right_wrist_dist_smooth,
         'left_wrist_dist_smooth': left_wrist_dist_smooth,
-        'right_phase_count': right_phase_count,
-        'left_phase_count': left_phase_count,
-        'right_prev_phase': right_prev_phase,
-        'left_prev_phase': left_prev_phase,
         'right_rep_flag': right_rep_flag,
         'left_rep_flag': left_rep_flag,
+        'right_velocity': _front_smoothers['right_angle'].get_velocity(),
+        'left_velocity': _front_smoothers['left_angle'].get_velocity(),
     }
 
 
@@ -146,10 +166,10 @@ def calculate_profile_view(results, history):
     left_hip = landmarks[POSE_LEFT_HIP]
     
     right_angle_raw = calculate_angle(right_shoulder, right_elbow, right_wrist)
-    right_angle_smooth = smooth_value(right_angle_raw, prev.get('right_angle_smooth'), PROFILE_ANGLE_SMOOTHING)
+    right_angle_smooth = _profile_smoothers['right_angle'].update(right_angle_raw)
     
     right_wrist_dist_raw = calculate_wrist_to_shoulder_distance(right_wrist, right_shoulder)
-    right_wrist_dist_smooth = smooth_value(right_wrist_dist_raw, prev.get('right_wrist_dist_smooth'), PROFILE_WRIST_DIST_SMOOTHING)
+    right_wrist_dist_smooth = _profile_smoothers['right_wrist_dist'].update(right_wrist_dist_raw)
     
     shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
                     (right_shoulder[1] + left_shoulder[1]) / 2)
@@ -157,30 +177,16 @@ def calculate_profile_view(results, history):
                (right_hip[1] + left_hip[1]) / 2)
     
     trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
-    trunk_angle_smooth = smooth_value(trunk_angle_raw, prev.get('trunk_angle_smooth'), PROFILE_TRUNK_SMOOTHING)
+    trunk_angle_smooth = _profile_smoothers['trunk_angle'].update(trunk_angle_raw)
     
-    right_phase_detected = detect_phase(right_angle_smooth, PROFILE_FLEX_THRESHOLD, PROFILE_EXTEND_THRESHOLD)
-    
-    right_phase = prev.get('right_phase', 'unknown')
-    right_phase_count = prev.get('right_phase_count', 0)
-    right_prev_phase = prev.get('right_prev_phase', 'unknown')
-    
-    if right_phase_detected == 'middle':
-        right_phase = 'middle'
-    elif right_phase_detected == right_prev_phase:
-        right_phase_count += 1
-        if right_phase_count >= STABILITY_FRAMES:
-            right_phase = right_phase_detected
-    else:
-        right_phase_count = 1
-        right_prev_phase = right_phase_detected
+    right_phase = _profile_phase_detector.update(right_angle_smooth)
     
     right_reps = prev.get('right_reps', 0)
     right_rep_flag = prev.get('right_rep_flag', False)
     
-    if right_phase == 'flexed':
+    if right_phase == 'flexed' and _profile_phase_detector.is_stable(3):
         right_rep_flag = True
-    elif right_phase == 'extended' and right_rep_flag:
+    elif right_phase == 'extended' and right_rep_flag and _profile_phase_detector.is_stable(3):
         right_reps += 1
         right_rep_flag = False
     
@@ -193,7 +199,7 @@ def calculate_profile_view(results, history):
         'right_angle_smooth': right_angle_smooth,
         'trunk_angle_smooth': trunk_angle_smooth,
         'right_wrist_dist_smooth': right_wrist_dist_smooth,
-        'right_phase_count': right_phase_count,
-        'right_prev_phase': right_prev_phase,
         'right_rep_flag': right_rep_flag,
+        'right_velocity': _profile_smoothers['right_angle'].get_velocity(),
+        'trunk_velocity': _profile_smoothers['trunk_angle'].get_velocity(),
     }

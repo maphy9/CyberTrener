@@ -5,6 +5,7 @@ import time
 from audio import AudioHandler, listen_for_voice_commands
 from core.pose_drawing import draw_pose_with_errors
 from exercises.bicep_curl.controller import BicepCurlController
+from exercises.bicep_curl.metrics import reset_front_view_state, reset_profile_view_state
 from calibration.controller import CalibrationController
 from calibration.data import CalibrationData
 
@@ -119,6 +120,9 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     
     calibration_data = CalibrationData.load()
     exercise = BicepCurlController(calibration_data)
+    
+    reset_front_view_state()
+    reset_profile_view_state()
     
     error_states = {}
     last_error_spoken = {}
