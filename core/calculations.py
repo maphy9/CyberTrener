@@ -16,28 +16,6 @@ def extract_pose_landmarks(results):
     return landmarks
 
 
-def extract_pose_landmarks_filtered(results, min_visibility=None, required_landmarks=None):
-    if min_visibility is None:
-        min_visibility = MIN_LANDMARK_VISIBILITY
-    
-    landmarks = {}
-    try:
-        landmark_list = results.pose_landmarks.landmark
-    except Exception:
-        return None
-    
-    for i, lm in enumerate(landmark_list):
-        visibility = getattr(lm, 'visibility', 0)
-        landmarks[i] = (lm.x, lm.y, visibility)
-    
-    if required_landmarks:
-        for idx in required_landmarks:
-            if idx not in landmarks or landmarks[idx][2] < min_visibility:
-                return None
-    
-    return landmarks
-
-
 def get_landmark_confidence(landmarks, indices):
     if not landmarks:
         return 0.0

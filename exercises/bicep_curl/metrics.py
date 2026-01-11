@@ -1,6 +1,5 @@
 from core.calculations import (
     extract_pose_landmarks,
-    extract_pose_landmarks_filtered,
     get_landmark_confidence,
     check_landmarks_visible,
     calculate_angle,
