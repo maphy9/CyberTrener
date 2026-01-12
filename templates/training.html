@@ -70,6 +70,17 @@
             </button>
           </div>
 
+          <div
+            class="controls-box"
+            id="analysis-controls"
+            style="display: none"
+          >
+            <button class="btn btn-primary" id="btn-start">ZACZNIJ</button>
+            <button class="btn btn-secondary" id="btn-stop" disabled>
+              PAUZA
+            </button>
+          </div>
+
           <div class="stats-compact">
             <div class="stat-row">
               <span class="stat-label">Prawe ramię:</span>
@@ -87,12 +98,24 @@
             </div>
           </div>
 
-          <div class="calibration-box" id="calibration-box" style="display: none;">
+          <div
+            class="calibration-box"
+            id="calibration-box"
+            style="display: none"
+          >
             <h3 class="calibration-title">🎯 Kalibracja</h3>
-            <div class="calibration-step" id="calibration-step-text">Ładowanie...</div>
-            <div class="calibration-instruction" id="calibration-instruction"></div>
+            <div class="calibration-step" id="calibration-step-text">
+              Ładowanie...
+            </div>
+            <div
+              class="calibration-instruction"
+              id="calibration-instruction"
+            ></div>
             <div class="calibration-progress-bar">
-              <div class="calibration-progress-fill" id="calibration-progress"></div>
+              <div
+                class="calibration-progress-fill"
+                id="calibration-progress"
+              ></div>
             </div>
             <div class="calibration-steps-indicator" id="calibration-steps">
               <span class="step-dot" data-step="neutral"></span>

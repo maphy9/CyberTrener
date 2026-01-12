@@ -7,6 +7,7 @@ class CameraStream:
         self.stream = cv2.VideoCapture(source)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.frame = None
         self.lock = Lock()
         self.running = False

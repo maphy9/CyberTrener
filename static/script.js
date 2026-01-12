@@ -16,6 +16,9 @@ const sessionMode = localStorage.getItem("sessionMode") || "training";
 
 const btnConnect = document.getElementById("btn-connect");
 const btnDisconnect = document.getElementById("btn-disconnect");
+const btnStart = document.getElementById("btn-start");
+const btnStop = document.getElementById("btn-stop");
+const analysisControls = document.getElementById("analysis-controls");
 const frontImg = document.getElementById("front-image");
 const profileImg = document.getElementById("profile-image");
 const rightRepsSpan = document.getElementById("right-reps");
@@ -29,7 +32,9 @@ const placeholderProfile = document.getElementById("placeholder-profile");
 const voiceStatus = document.getElementById("voice-status");
 const calibrationBox = document.getElementById("calibration-box");
 const calibrationStepText = document.getElementById("calibration-step-text");
-const calibrationInstruction = document.getElementById("calibration-instruction");
+const calibrationInstruction = document.getElementById(
+  "calibration-instruction"
+);
 const calibrationProgress = document.getElementById("calibration-progress");
 
 const STEP_NAMES = {
@@ -38,10 +43,16 @@ const STEP_NAMES = {
   right_extend: "Prawa ręka - wyprost",
   left_flex: "Lewa ręka - zgięcie",
   left_extend: "Lewa ręka - wyprost",
-  complete: "Zakończono"
+  complete: "Zakończono",
 };
 
-const STEP_ORDER = ["neutral", "right_flex", "right_extend", "left_flex", "left_extend"];
+const STEP_ORDER = [
+  "neutral",
+  "right_flex",
+  "right_extend",
+  "left_flex",
+  "left_extend",
+];
 
 function showCalibrationUI() {
   if (calibrationBox) {
@@ -70,13 +81,13 @@ function updateCalibrationStep(step, instruction) {
   if (calibrationInstruction) {
     calibrationInstruction.textContent = instruction;
   }
-  
+
   const stepIndex = STEP_ORDER.indexOf(step);
-  const progress = stepIndex >= 0 ? ((stepIndex) / STEP_ORDER.length) * 100 : 0;
+  const progress = stepIndex >= 0 ? (stepIndex / STEP_ORDER.length) * 100 : 0;
   if (calibrationProgress) {
     calibrationProgress.style.width = progress + "%";
   }
-  
+
   document.querySelectorAll(".step-dot").forEach((dot, i) => {
     dot.classList.remove("active", "completed");
     if (i < stepIndex) {
@@ -154,16 +165,16 @@ function showCalibrationLoading() {
 btnConnect.addEventListener("click", () => {
   btnConnect.disabled = true;
   btnConnect.textContent = "ŁĄCZENIE...";
-  
+
   if (sessionMode === "calibration") {
     isCalibrating = true;
     showCalibrationLoading();
     setVoiceStatus("Łączenie z kamerami...");
   }
-  
+
   socket.emit("start-session", {
     cameras: cameraSettings,
-    mode: sessionMode
+    mode: sessionMode,
   });
   btnDisconnect.disabled = false;
   isConnected = true;
@@ -174,10 +185,26 @@ btnDisconnect.addEventListener("click", () => {
   fullDisconnect();
 });
 
+btnStart.addEventListener("click", () => {
+  socket.emit("start-analysis");
+  btnStart.textContent = "URUCHAMIAM...";
+  btnStart.disabled = true;
+});
+
+btnStop.addEventListener("click", () => {
+  socket.emit("stop-analysis");
+  btnStop.textContent = "ZATRZYMUJĘ...";
+  btnStop.disabled = true;
+});
+
 function fullDisconnect() {
   isConnected = false;
   isAnalyzing = false;
   btnConnect.textContent = "CONNECT";
+
+  if (analysisControls) analysisControls.style.display = "none";
+  if (btnStart) btnStart.disabled = false;
+  if (btnStop) btnStop.disabled = true;
 
   resetTimer();
   resetUI();
@@ -200,12 +227,26 @@ function changeStateToConnected() {
 }
 
 socket.on("status", (data) => {
+  btnConnect.textContent = "CONNECT";
+  if (sessionMode !== "calibration" && analysisControls) {
+    analysisControls.style.display = "flex";
+  }
   if (data.state === "waiting") {
+    if (btnStart) {
+      btnStart.disabled = false;
+      btnStart.textContent = "ZACZNIJ";
+    }
+    if (btnStop) btnStop.disabled = true;
     isAnalyzing = false;
-    setVoiceStatus("Powiedz 'zacznij' aby rozpocząć");
+    setVoiceStatus("Powiedz 'zacznij' lub kliknij przycisk");
   } else if (data.state === "analyzing") {
+    if (btnStart) btnStart.disabled = true;
+    if (btnStop) {
+      btnStop.disabled = false;
+      btnStop.textContent = "PAUZA";
+    }
     isAnalyzing = true;
-    setVoiceStatus("Powiedz 'pauza' aby zatrzymać");
+    setVoiceStatus("Trening w toku...");
     startTimer();
   }
 });
@@ -245,7 +286,7 @@ socket.on("calibration-step", (data) => {
 
 socket.on("calibration-complete", (data) => {
   isCalibrating = false;
-  
+
   if (calibrationProgress) {
     calibrationProgress.style.width = "100%";
   }
@@ -259,7 +300,7 @@ socket.on("calibration-complete", (data) => {
   if (calibrationInstruction) {
     calibrationInstruction.textContent = "Kalibracja zakończona pomyślnie.";
   }
-  
+
   setVoiceStatus("Kalibracja zakończona! Przekierowuję...");
   localStorage.setItem("sessionMode", "training");
   setTimeout(() => {

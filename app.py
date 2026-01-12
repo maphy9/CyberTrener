@@ -7,6 +7,7 @@ from processing import process_camera_streams, run_calibration_session
 from calibration.data import CalibrationData
 
 processing_event = Event()
+analyzing_event = Event()
 processing_thread = None
 
 app = Flask(__name__)
@@ -87,12 +88,14 @@ def handle_start_session(data):
 
         if session_mode == 'calibration':
             target_fn = run_calibration_session
+            args = (socketio, front_camera_stream, profile_camera_stream, processing_event)
         else:
             target_fn = process_camera_streams
+            args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event)
 
         processing_thread = Thread(
             target=target_fn,
-            args=(socketio, front_camera_stream, profile_camera_stream, processing_event),
+            args=args,
             daemon=True
         )
         processing_thread.start()
@@ -109,9 +112,20 @@ def handle_end_session():
         print('Tried to end a session that has not started')
         return
     processing_event.set()
+    analyzing_event.clear()
     if processing_thread:
         processing_thread.join()
     print('Session ended')
+
+@socketio.on('start-analysis')
+def handle_start_analysis():
+    analyzing_event.set()
+    print('Analysis started')
+
+@socketio.on('stop-analysis')
+def handle_stop_analysis():
+    analyzing_event.clear()
+    print('Analysis stopped')
 
 if __name__ == '__main__':
     processing_event.set()

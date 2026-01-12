@@ -96,7 +96,7 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
     profile_stream.stop()
 
 
-def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
+def process_camera_streams(socketio, front_stream, profile_stream, stop_event, analyzing_event):
     front_pose = mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
@@ -109,7 +109,6 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event):
     )
     
     audio_handler = AudioHandler()
-    analyzing_event = Event()
     
     audio_handler.queue_speech("Powiedz 'zacznij' aby rozpocząć")
     
