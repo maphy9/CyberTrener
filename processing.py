@@ -9,7 +9,17 @@ from exercises.bicep_curl.metrics import reset_front_view_state, reset_profile_v
 from calibration.controller import CalibrationController
 from calibration.data import CalibrationData
 
-mp_pose = mp.solutions.pose # type: ignore
+mp_pose = mp.solutions.pose
+
+CALIBRATION_PHRASES = [
+    "Rozpoczynam kalibrację",
+    "Stań prosto z rękami wzdłuż ciała",
+    "Zegnij prawą rękę maksymalnie w łokciu",
+    "Wyprostuj prawą rękę maksymalnie",
+    "Zegnij lewą rękę maksymalnie w łokciu",
+    "Wyprostuj lewą rękę maksymalnie",
+    "Kalibracja zakończona"
+]
 
 
 def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
@@ -27,6 +37,8 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
     audio_handler = AudioHandler()
     calibration = CalibrationController()
     
+    audio_handler.preload_speech(CALIBRATION_PHRASES)
+    
     reset_front_view_state()
     reset_profile_view_state()
     
@@ -38,12 +50,20 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
         'instruction': calibration.get_instructions()
     })
     
+    waiting_for_speech = True
+    processing_enabled = False
+    
     while not stop_event.is_set():
         front_frame, front_was_read = front_stream.get()
         profile_frame, profile_was_read = profile_stream.get()
         
         if front_frame is None or profile_frame is None:
             continue
+        
+        if waiting_for_speech:
+            if audio_handler._speech_complete.is_set():
+                waiting_for_speech = False
+                processing_enabled = True
         
         if not front_was_read:
             front_rgb = cv2.cvtColor(front_frame, cv2.COLOR_BGR2RGB)
@@ -63,22 +83,29 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
         else:
             profile_results = None
         
-        if front_results and profile_results:
+        if processing_enabled and front_results and profile_results:
             step_complete, message = calibration.process_frames(front_results, profile_results)
             
             if step_complete:
-                if message:
-                    audio_handler.queue_speech(message)
+                processing_enabled = False
                 
                 if calibration.is_complete():
                     calibration_data = calibration.get_calibration_data()
                     calibration_data.save()
                     
+                    audio_handler.queue_speech_priority("Kalibracja zakończona")
+                    
                     socketio.emit('calibration-complete', {
                         'data': calibration_data.to_dict()
                     })
+                    
+                    audio_handler.wait_for_speech()
                     break
                 else:
+                    if message:
+                        audio_handler.queue_speech_priority(message)
+                        waiting_for_speech = True
+                    
                     socketio.emit('calibration-step', {
                         'step': calibration.current_step,
                         'instruction': calibration.get_instructions()
