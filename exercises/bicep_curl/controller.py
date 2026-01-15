@@ -1,12 +1,12 @@
-from core.pose_analyzer import PoseAnalyzer
+from core.pose_analyzer import EnhancedPoseAnalyzer
 from exercises.bicep_curl.metrics import calculate_front_view, calculate_profile_view
 from exercises.bicep_curl.form_checker import AlternatingBicepCurlValidator, ERROR_MESSAGES
 
 
 class BicepCurlController:
     def __init__(self, calibration=None):
-        self.front_analyzer = PoseAnalyzer(calculate_front_view)
-        self.profile_analyzer = PoseAnalyzer(calculate_profile_view)
+        self.front_analyzer = EnhancedPoseAnalyzer(calculate_front_view)
+        self.profile_analyzer = EnhancedPoseAnalyzer(calculate_profile_view)
         self.validator = AlternatingBicepCurlValidator(calibration)
         
         self.prev_right_reps = 0

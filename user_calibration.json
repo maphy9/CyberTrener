@@ -1,0 +1,11 @@
+{
+  "neutral_trunk_angle": 165.58333333333334,
+  "right_min_angle": 19.242105263157896,
+  "right_max_angle": 164.36315789473684,
+  "left_min_angle": 20.11578947368421,
+  "left_max_angle": 168.19473684210527,
+  "vertical_tolerance": 20,
+  "trunk_tolerance": 24.416666666666657,
+  "calibrated": true,
+  "calibration_date": "2026-01-12T16:59:59.337675"
+}

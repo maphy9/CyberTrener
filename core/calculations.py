@@ -2,6 +2,9 @@ import math
 import numpy as np
 
 
+MIN_LANDMARK_VISIBILITY = 0.5
+
+
 def extract_pose_landmarks(results):
     landmarks = {}
     try:
@@ -11,6 +14,31 @@ def extract_pose_landmarks(results):
     for i, lm in enumerate(landmark_list):
         landmarks[i] = (lm.x, lm.y, getattr(lm, 'visibility', 0))
     return landmarks
+
+
+def get_landmark_confidence(landmarks, indices):
+    if not landmarks:
+        return 0.0
+    
+    visibilities = []
+    for i in indices:
+        if i in landmarks:
+            visibilities.append(landmarks[i][2])
+    
+    return sum(visibilities) / len(visibilities) if visibilities else 0.0
+
+
+def check_landmarks_visible(landmarks, indices, min_visibility=None):
+    if min_visibility is None:
+        min_visibility = MIN_LANDMARK_VISIBILITY
+    
+    if not landmarks:
+        return False
+    
+    for idx in indices:
+        if idx not in landmarks or landmarks[idx][2] < min_visibility:
+            return False
+    return True
 
 
 def calculate_angle(point_a, point_b, point_c):
@@ -88,9 +116,156 @@ def smooth_value(current_value, previous_value, smoothing_factor=0.25):
     return smoothing_factor * current_value + (1 - smoothing_factor) * previous_value
 
 
+def adaptive_smooth_value(current_value, previous_value, base_smoothing=0.25, velocity_threshold=5.0):
+    """
+    Adaptive smoothing that reduces lag during fast movements.
+    - Slow movement: higher smoothing (more stable)
+    - Fast movement: lower smoothing (more responsive)
+    
+    Returns:
+        tuple: (smoothed_value, velocity)
+    """
+    if previous_value is None:
+        return current_value, 0.0
+    
+    velocity = abs(current_value - previous_value)
+    
+    if velocity > velocity_threshold:
+        adaptive_factor = max(0.5, base_smoothing * (velocity_threshold / velocity))
+    else:
+        adaptive_factor = min(0.15, base_smoothing * (1 - velocity / velocity_threshold * 0.5))
+    
+    smoothed = adaptive_factor * current_value + (1 - adaptive_factor) * previous_value
+    return smoothed, velocity
+
+
+def exponential_moving_average(current_value, ema_value, alpha=0.3):
+    """Standard EMA for consistent smoothing."""
+    if ema_value is None:
+        return current_value
+    return alpha * current_value + (1 - alpha) * ema_value
+
+
+class AdaptiveSmoother:
+    """
+    Stateful adaptive smoother that tracks velocity and adjusts smoothing dynamically.
+    Useful for per-joint smoothing with independent state.
+    """
+    
+    def __init__(self, base_smoothing=0.25, velocity_threshold=5.0, velocity_smoothing=0.3):
+        self.base_smoothing = base_smoothing
+        self.velocity_threshold = velocity_threshold
+        self.velocity_smoothing = velocity_smoothing
+        self.previous_value = None
+        self.smoothed_velocity = 0.0
+    
+    def update(self, current_value):
+        """
+        Update smoother with new value.
+        
+        Returns:
+            float: Smoothed value
+        """
+        if self.previous_value is None:
+            self.previous_value = current_value
+            return current_value
+        
+       
+        instant_velocity = abs(current_value - self.previous_value)
+        
+        self.smoothed_velocity = (
+            self.velocity_smoothing * instant_velocity + 
+            (1 - self.velocity_smoothing) * self.smoothed_velocity
+        )
+        
+        if self.smoothed_velocity > self.velocity_threshold:
+            ratio = min(2.0, self.smoothed_velocity / self.velocity_threshold)
+            adaptive_factor = min(0.6, self.base_smoothing * ratio)
+        else:
+            ratio = self.smoothed_velocity / self.velocity_threshold
+            adaptive_factor = max(0.1, self.base_smoothing * (0.5 + 0.5 * ratio))
+        
+        smoothed = adaptive_factor * current_value + (1 - adaptive_factor) * self.previous_value
+        self.previous_value = smoothed
+        
+        return smoothed
+    
+    def reset(self):
+        """Reset smoother state."""
+        self.previous_value = None
+        self.smoothed_velocity = 0.0
+    
+    def get_velocity(self):
+        return self.smoothed_velocity
+
+
 def detect_phase(angle, flex_threshold=80, extend_threshold=120):
     if angle <= flex_threshold:
         return 'flexed'
     elif angle >= extend_threshold:
         return 'extended'
     return 'middle'
+
+
+def detect_phase_with_hysteresis(angle, current_phase, flex_threshold=80, extend_threshold=120, hysteresis=10):
+    if current_phase == 'flexed':
+        if angle >= flex_threshold + hysteresis:
+            if angle >= extend_threshold:
+                return 'extended'
+            return 'middle'
+        return 'flexed'
+    
+    elif current_phase == 'extended':
+        if angle <= extend_threshold - hysteresis:
+            if angle <= flex_threshold:
+                return 'flexed'
+            return 'middle'
+        return 'extended'
+    
+    else:
+        if angle <= flex_threshold:
+            return 'flexed'
+        elif angle >= extend_threshold:
+            return 'extended'
+        return 'middle'
+
+
+class PhaseDetector:
+    def __init__(self, flex_threshold=80, extend_threshold=120, hysteresis=10):
+        self.flex_threshold = flex_threshold
+        self.extend_threshold = extend_threshold
+        self.hysteresis = hysteresis
+        self.current_phase = 'middle'
+        self.phase_history = []
+        self.frames_in_phase = 0
+    
+    def update(self, angle):
+        previous_phase = self.current_phase
+        self.current_phase = detect_phase_with_hysteresis(
+            angle, 
+            self.current_phase, 
+            self.flex_threshold, 
+            self.extend_threshold, 
+            self.hysteresis
+        )
+        
+        if self.current_phase == previous_phase:
+            self.frames_in_phase += 1
+        else:
+            self.phase_history.append((previous_phase, self.frames_in_phase))
+            if len(self.phase_history) > 10:
+                self.phase_history.pop(0)
+            self.frames_in_phase = 1
+        
+        return self.current_phase
+    
+    def get_phase(self):
+        return self.current_phase
+    
+    def is_stable(self, min_frames=5):
+        return self.frames_in_phase >= min_frames
+    
+    def reset(self):
+        self.current_phase = 'middle'
+        self.phase_history = []
+        self.frames_in_phase = 0
