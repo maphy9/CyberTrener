@@ -583,7 +583,7 @@ def _handle_exercise_transition(socketio, audio_handler, session, event_result, 
         round_num = event_result['round']
         total = event_result['total_rounds']
         exercise = event_result['exercise']
-        audio_handler.queue_speech_priority(f"Runda {round_num} z {total}. {exercise}.")
+        audio_handler.queue_speech_priority(f"Runda {round_num}. {exercise}.")
         
     elif event == 'new_exercise':
         exercise = event_result['exercise']
