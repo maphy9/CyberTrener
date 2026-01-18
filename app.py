@@ -3,12 +3,14 @@ from flask_socketio import SocketIO, emit
 from threading import Thread, Event
 from camera import CameraStream
 from core.constants import *
-from processing import process_camera_streams, run_calibration_session
+from processing import process_camera_streams, run_calibration_session, run_unified_training_session
 from calibration.data import CalibrationData
 
 processing_event = Event()
 analyzing_event = Event()
 processing_thread = None
+exercise_command_event = Event()
+exercise_command_type = [None]  # Using list for mutability
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -52,11 +54,16 @@ def handle_start_session(data):
         return
     
     camera_config = data.get('cameras', data)
-    session_mode = data.get('mode', 'training')
-    exercise_type = data.get('exerciseType', 'bicep_curl')
+    session_mode = data.get('mode', 'unified')
+    training_settings = data.get('trainingSettings', {
+        'exercises': ['bicep_curl', 'overhead_press'],
+        'repsPerSet': 10,
+        'rounds': 3
+    })
+    force_calibration = training_settings.get('forceCalibration', False)
     
     print(f'New {session_mode} session started')
-    print(f'Exercise type: {exercise_type}')
+    print(f'Training settings: {training_settings}')
     print(f'Camera config: {camera_config}')
     processing_event.clear()
 
@@ -89,9 +96,16 @@ def handle_start_session(data):
             return
 
         if session_mode == 'calibration':
+            # Legacy calibration-only mode
             target_fn = run_calibration_session
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event)
+        elif session_mode == 'unified':
+            # New unified mode: calibration (if needed) + exercises
+            target_fn = run_unified_training_session
+            args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, training_settings, force_calibration)
         else:
+            # Legacy training mode (single exercise)
+            exercise_type = data.get('exerciseType', 'bicep_curl')
             target_fn = process_camera_streams
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, exercise_type)
 

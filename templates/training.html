@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
@@ -11,18 +11,23 @@
   <body>
     <div class="training-page" id="trainingPage" style="display: flex">
       <header class="training-header">
-        <a href="/" class="back-btn">← Powrót</a>
-        <h2 class="exercise-name">
-          <span id="exercise-name">Naprzemienne uginanie przedramion z hantlami</span>
-        </h2>
+        <div class="header-left">
+          <a href="/" class="back-btn">← Powrót</a>
+          <div class="round-info" id="round-info">
+            <span id="round-text">Runda 1/3</span>
+          </div>
+        </div>
         <div class="timer" id="timer">00:00</div>
+        <h2 class="exercise-name">
+          <span id="exercise-name">Ładowanie...</span>
+        </h2>
       </header>
 
       <div class="training-content">
         <div class="main-column">
           <div class="camera-feed camera-front">
             <div class="camera-header">
-              <span class="camera-label"> 🔹 Frontal camera </span>
+              <span class="camera-label"> 🔹 Kamera frontalna </span>
               <span class="camera-status">
                 <span class="status-dot" id="status-dot-front"></span>
                 <span id="status-front">Rozłączono</span>
@@ -45,7 +50,7 @@
         <div class="side-column">
           <div class="camera-feed camera-profile">
             <div class="camera-header">
-              <span class="camera-label"> 🔹 Profile camera </span>
+              <span class="camera-label"> 🔹 Kamera profilowa </span>
               <span class="camera-status">
                 <span class="status-dot" id="status-dot-profile"></span>
                 <span id="status-profile">Rozłączono</span>
@@ -64,40 +69,42 @@
           </div>
 
           <div class="controls-box">
-            <button class="btn btn-primary" id="btn-connect">CONNECT</button>
+            <button class="btn btn-primary" id="btn-connect">POŁĄCZ</button>
             <button class="btn btn-secondary" id="btn-disconnect" disabled>
-              DISCONNECT
+              ROZŁĄCZ
             </button>
           </div>
 
-          <div
-            class="controls-box"
-            id="analysis-controls"
-            style="display: none"
-          >
-            <button class="btn btn-primary" id="btn-start">ZACZNIJ</button>
-            <button class="btn btn-secondary" id="btn-stop" disabled>
-              PAUZA
-            </button>
-          </div>
-
-          <div class="stats-compact">
-            <div class="stat-row">
+          <!-- Stats box for exercise phase -->
+          <div class="stats-compact" id="stats-box">
+            <div class="stat-row" id="stat-right-row">
               <span class="stat-label">Prawe ramię:</span>
               <span class="stat-result">
                 <strong class="stat-value primary" id="right-reps">0</strong>
-                powt.
+                <span class="stat-target"
+                  >/ <span id="target-reps">10</span></span
+                >
               </span>
             </div>
-            <div class="stat-row">
+            <div class="stat-row" id="stat-left-row">
               <span class="stat-label">Lewe ramię:</span>
               <span class="stat-result">
                 <strong class="stat-value secondary" id="left-reps">0</strong>
-                powt.
+                <span class="stat-target"
+                  >/ <span id="target-reps-left">10</span></span
+                >
+              </span>
+            </div>
+            <div class="stat-row progress-row">
+              <span class="stat-label">Postęp ćwiczenia:</span>
+              <span class="stat-result">
+                <span id="exercise-progress">1</span> /
+                <span id="total-exercises">2</span>
               </span>
             </div>
           </div>
 
+          <!-- Calibration box -->
           <div
             class="calibration-box"
             id="calibration-box"
@@ -124,6 +131,20 @@
               <span class="step-dot" data-step="left_flex"></span>
               <span class="step-dot" data-step="left_extend"></span>
             </div>
+          </div>
+
+          <!-- Training complete message -->
+          <div class="complete-box" id="complete-box" style="display: none">
+            <h3 class="complete-title">🎉 Trening zakończony!</h3>
+            <div class="complete-stats">
+              <p>
+                Łączne powtórzenia (prawe): <strong id="total-right">0</strong>
+              </p>
+              <p>
+                Łączne powtórzenia (lewe): <strong id="total-left">0</strong>
+              </p>
+            </div>
+            <a href="/" class="btn btn-primary">Wróć do menu</a>
           </div>
         </div>
       </div>
