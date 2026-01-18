@@ -48,7 +48,6 @@ class TrainingSettings:
 
 @dataclass  
 class SessionState:
-    """Current state of the training session."""
     phase: SessionPhase = SessionPhase.CALIBRATION
     current_exercise_index: int = 0
     current_round: int = 1
@@ -56,6 +55,8 @@ class SessionState:
     left_reps: int = 0
     total_right_reps: int = 0
     total_left_reps: int = 0
+    waiting_for_neutral: bool = True
+    neutral_frames: int = 0
 
 
 EXERCISE_NAMES = {
@@ -101,7 +102,6 @@ class TrainingSessionController:
         self._init_current_exercise()
     
     def _init_current_exercise(self):
-        """Initialize the controller for the current exercise."""
         if self.state.current_exercise_index >= len(self.settings.exercises):
             return
             
@@ -112,14 +112,14 @@ class TrainingSessionController:
         elif exercise_type == "overhead_press":
             self.current_exercise_controller = OverheadPressController()
         else:
-            # Default to bicep curl
             self.current_exercise_controller = BicepCurlController(self.calibration_data)
         
-        # Reset rep counters for new exercise
         self.state.right_reps = 0
         self.state.left_reps = 0
         self._prev_right_reps = 0
         self._prev_left_reps = 0
+        self.state.waiting_for_neutral = True
+        self.state.neutral_frames = 0
     
     def get_current_exercise_name(self) -> str:
         """Get the Polish name of the current exercise."""
@@ -135,20 +135,62 @@ class TrainingSessionController:
         return self.settings.exercises[self.state.current_exercise_index]
     
     def process_frame(self, front_results, profile_results) -> Dict:
-        """
-        Process a frame through the current exercise controller.
-        Returns metrics and any state change events.
-        """
         if self.state.phase != SessionPhase.EXERCISE or not self.current_exercise_controller:
             return {"right_reps": 0, "left_reps": 0, "errors": {}}
         
+        if self.state.waiting_for_neutral:
+            is_neutral = self._check_neutral_pose(front_results)
+            if is_neutral:
+                self.state.neutral_frames += 1
+                if self.state.neutral_frames >= 15:
+                    self.state.waiting_for_neutral = False
+                    self.state.neutral_frames = 0
+            else:
+                self.state.neutral_frames = 0
+            return {"right_reps": 0, "left_reps": 0, "errors": {}, "waiting_for_neutral": True}
+        
         metrics = self.current_exercise_controller.process_frames(front_results, profile_results)
         
-        # Update rep counts
         self.state.right_reps = metrics.get("right_reps", 0)
         self.state.left_reps = metrics.get("left_reps", 0)
         
         return metrics
+    
+    def _check_neutral_pose(self, front_results) -> bool:
+        if not front_results or not front_results.pose_landmarks:
+            return False
+        
+        landmarks = front_results.pose_landmarks.landmark
+        
+        try:
+            r_shoulder = landmarks[12]
+            r_elbow = landmarks[14]
+            r_wrist = landmarks[16]
+            l_shoulder = landmarks[11]
+            l_elbow = landmarks[13]
+            l_wrist = landmarks[15]
+            
+            import math
+            
+            def calc_angle(a, b, c):
+                ba = (a.x - b.x, a.y - b.y)
+                bc = (c.x - b.x, c.y - b.y)
+                dot = ba[0]*bc[0] + ba[1]*bc[1]
+                mag_ba = math.sqrt(ba[0]**2 + ba[1]**2)
+                mag_bc = math.sqrt(bc[0]**2 + bc[1]**2)
+                if mag_ba * mag_bc == 0:
+                    return 180
+                cos_angle = dot / (mag_ba * mag_bc)
+                cos_angle = max(-1, min(1, cos_angle))
+                return math.degrees(math.acos(cos_angle))
+            
+            right_angle = calc_angle(r_shoulder, r_elbow, r_wrist)
+            left_angle = calc_angle(l_shoulder, l_elbow, l_wrist)
+            
+            return right_angle > 150 and left_angle > 150
+            
+        except (IndexError, AttributeError):
+            return False
     
     def check_set_complete(self) -> bool:
         """Check if the current set (target reps) is complete."""

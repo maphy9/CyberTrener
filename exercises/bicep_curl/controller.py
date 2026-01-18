@@ -48,8 +48,11 @@ class BicepCurlController:
             self.prev_right_reps = analyzer_right_reps
             self.prev_left_reps = analyzer_left_reps
             result['rep_detected'] = True
+            result['valid'] = False
             result['error_message'] = ERROR_MESSAGES['both_arms_flexed']
             result['error_parts'] = ['left_arm', 'right_arm']
+            result['right_reps'] = self.valid_right_reps
+            result['left_reps'] = self.valid_left_reps
             
         elif right_rep_detected:
             self.prev_right_reps = analyzer_right_reps
