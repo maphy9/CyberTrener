@@ -136,7 +136,6 @@ profileTypeRadios.forEach((radio) => {
   });
 });
 
-
 function startExercise(exerciseType) {
   const settings = getCameraSettings();
   if (!settings) return;
@@ -152,14 +151,14 @@ function startExercise(exerciseType) {
       } else {
         localStorage.setItem("cameraSettings", JSON.stringify(settings));
         localStorage.setItem("sessionMode", "training");
-        localStorage.setItem("exerciseType", exerciseType);
+        localStorage.setItem("exerciseType", exerciseType); // ADD THIS LINE
         window.location.href = "/training";
       }
     })
     .catch(() => {
       localStorage.setItem("cameraSettings", JSON.stringify(settings));
       localStorage.setItem("sessionMode", "training");
-      localStorage.setItem("exerciseType", exerciseType);
+      localStorage.setItem("exerciseType", exerciseType); // ADD THIS LINE
       window.location.href = "/training";
     });
 }
