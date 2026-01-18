@@ -57,6 +57,8 @@ class SessionState:
     total_left_reps: int = 0
     waiting_for_neutral: bool = True
     neutral_frames: int = 0
+    total_errors: int = 0
+    exercise_stats: Dict = field(default_factory=dict)
 
 
 EXERCISE_NAMES = {
@@ -66,13 +68,6 @@ EXERCISE_NAMES = {
 
 
 class TrainingSessionController:
-    """
-    Manages the entire training session flow:
-    1. Calibration (if needed)
-    2. Multiple exercises with configurable reps
-    3. Multiple rounds (podejścia)
-    4. Voice command navigation
-    """
     
     def __init__(self, settings: TrainingSettings, force_calibration: bool = False):
         self.settings = settings
@@ -82,7 +77,9 @@ class TrainingSessionController:
         self._prev_right_reps = 0
         self._prev_left_reps = 0
         
-        # Check if calibration is needed
+        for ex in settings.exercises:
+            self.state.exercise_stats[ex] = {"reps": 0, "errors": 0}
+        
         if not force_calibration:
             self.calibration_data = CalibrationData.load()
             if self.calibration_data and self.calibration_data.calibrated:
@@ -154,6 +151,12 @@ class TrainingSessionController:
         self.state.right_reps = metrics.get("right_reps", 0)
         self.state.left_reps = metrics.get("left_reps", 0)
         
+        if metrics.get("rep_detected") and not metrics.get("valid"):
+            self.state.total_errors += 1
+            exercise_type = self.get_current_exercise_type()
+            if exercise_type in self.state.exercise_stats:
+                self.state.exercise_stats[exercise_type]["errors"] += 1
+        
         return metrics
     
     def _check_neutral_pose(self, front_results) -> bool:
@@ -205,22 +208,21 @@ class TrainingSessionController:
                     self.state.left_reps >= target_reps)
     
     def advance_to_next(self) -> Dict:
-        """
-        Advance to next exercise or round.
-        Returns event info for announcements.
-        """
-        # Accumulate totals
+        exercise_type = self.get_current_exercise_type()
+        completed_reps = min(self.state.right_reps, self.state.left_reps) if exercise_type == "bicep_curl" else self.state.right_reps
+        
+        if exercise_type in self.state.exercise_stats:
+            self.state.exercise_stats[exercise_type]["reps"] += completed_reps
+        
         self.state.total_right_reps += self.state.right_reps
         self.state.total_left_reps += self.state.left_reps
         
         next_exercise_index = self.state.current_exercise_index + 1
         
         if next_exercise_index >= len(self.settings.exercises):
-            # Finished all exercises in this round
             next_round = self.state.current_round + 1
             
             if next_round > self.settings.rounds:
-                # Training complete!
                 self.state.phase = SessionPhase.COMPLETED
                 return {
                     "event": "training_complete",
@@ -228,7 +230,6 @@ class TrainingSessionController:
                     "total_left_reps": self.state.total_left_reps
                 }
             else:
-                # Next round, back to first exercise
                 self.state.current_round = next_round
                 self.state.current_exercise_index = 0
                 self._init_current_exercise()
@@ -302,8 +303,18 @@ class TrainingSessionController:
         return f"Runda {round_num} z {total_rounds}. {exercise}. {target} powtórzeń."
     
     def is_complete(self) -> bool:
-        """Check if the entire training session is complete."""
         return self.state.phase == SessionPhase.COMPLETED
+    
+    def get_completion_stats(self) -> Dict:
+        total_reps = sum(stats["reps"] for stats in self.state.exercise_stats.values())
+        return {
+            "totalReps": total_reps,
+            "totalErrors": self.state.total_errors,
+            "exerciseStats": {
+                EXERCISE_NAMES.get(ex, ex): stats 
+                for ex, stats in self.state.exercise_stats.items()
+            }
+        }
 
 
 def get_reset_functions(exercise_type: str):

@@ -121,16 +121,28 @@ function showExerciseUI() {
   currentPhase = "exercise";
 }
 
-function showCompleteUI(totalRight, totalLeft) {
+function showCompleteUI(stats) {
   if (statsBox) {
     statsBox.style.display = "none";
   }
   if (completeBox) {
     completeBox.style.display = "block";
-    const totalRightEl = document.getElementById("total-right");
-    const totalLeftEl = document.getElementById("total-left");
-    if (totalRightEl) totalRightEl.textContent = totalRight;
-    if (totalLeftEl) totalLeftEl.textContent = totalLeft;
+
+    const totalRepsEl = document.getElementById("total-reps");
+    const totalErrorsEl = document.getElementById("total-errors");
+    const breakdownEl = document.getElementById("exercise-breakdown");
+
+    if (totalRepsEl) totalRepsEl.textContent = stats.totalReps || 0;
+    if (totalErrorsEl) totalErrorsEl.textContent = stats.totalErrors || 0;
+
+    if (breakdownEl && stats.exerciseStats) {
+      let html = '<div class="exercise-breakdown-list">';
+      for (const [name, data] of Object.entries(stats.exerciseStats)) {
+        html += `<p>${name}: <strong>${data.reps}</strong> powt., <strong>${data.errors}</strong> błędów</p>`;
+      }
+      html += "</div>";
+      breakdownEl.innerHTML = html;
+    }
   }
   currentPhase = "complete";
 }
@@ -344,7 +356,7 @@ socket.on("training-state", (data) => {
 });
 
 socket.on("training-complete", (data) => {
-  showCompleteUI(data.totalRightReps || 0, data.totalLeftReps || 0);
+  showCompleteUI(data);
   setVoiceStatus("Trening zakończony! 🎉");
   stopTimer();
 });

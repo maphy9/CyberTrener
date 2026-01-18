@@ -472,15 +472,42 @@
   margin-bottom: 1.5rem;
 }
 
-.complete-stats p {
-  font-size: 1rem;
+.complete-stats .total-reps-line {
+  font-size: 1.2rem;
   color: var(--text);
   margin: 0.5rem 0;
 }
 
-.complete-stats strong {
+.complete-stats .total-reps-line strong {
+  color: var(--secondary);
+  font-size: 1.5rem;
+}
+
+.complete-stats .total-errors-line {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+}
+
+.complete-stats .total-errors-line strong {
+  color: var(--bad);
+}
+
+.exercise-breakdown-list {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exercise-breakdown-list p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0.4rem 0;
+}
+
+.exercise-breakdown-list strong {
   color: var(--primary);
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .complete-box .btn {

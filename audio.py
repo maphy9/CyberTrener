@@ -104,7 +104,7 @@ class AudioHandler:
                 pass
     
     async def _generate_speech(self, text, output_file):
-        communicate = edge_tts.Communicate(text, self.voice)
+        communicate = edge_tts.Communicate(text, self.voice, rate="+15%")
         await communicate.save(output_file)
     
     def preload_speech(self, texts):

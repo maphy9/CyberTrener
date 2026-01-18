@@ -18,12 +18,13 @@ mp_pose = mp.solutions.pose
 
 CALIBRATION_PHRASES = [
     "Rozpoczynam kalibrację",
-    "Stań prosto z rękami wzdłuż ciała",
-    "Zegnij prawą rękę maksymalnie w łokciu",
-    "Wyprostuj prawą rękę maksymalnie",
-    "Zegnij lewą rękę maksymalnie w łokciu",
-    "Wyprostuj lewą rękę maksymalnie",
-    "Kalibracja zakończona"
+    "Stań w pozycji neutralnej z ramionami wzdłuż ciała",
+    "Teraz ugnij prawą rękę",
+    "Teraz wyprostuj prawą rękę",
+    "Teraz ugnij lewą rękę",
+    "Teraz wyprostuj lewą rękę",
+    "Kalibracja zakończona",
+    "Kalibracja zakończona. Zaczynamy trening."
 ]
 
 TRAINING_PHRASES = [
@@ -31,13 +32,21 @@ TRAINING_PHRASES = [
     "Zaczynam",
     "Pauza",
     "Następne ćwiczenie",
-    "Poprzednie ćwiczenie",
-    "Runda",
+    "Wracamy",
+    "Runda 1 z 3",
+    "Runda 2 z 3",
+    "Runda 3 z 3",
     "Uginanie przedramion",
     "Wyciskanie nad głowę",
     "Trening zakończony",
-    "Świetnie!",
-    "powtórzeń"
+    "10 powtórzeń",
+    "5 powtórzeń",
+    "15 powtórzeń",
+    "20 powtórzeń",
+    "Trzymaj plecy prosto",
+    "Trzymaj rękę pionowo",
+    "Nie pracuj obiema rękami jednocześnie",
+    "Zmieniaj ręce naprzemiennie"
 ]
 
 
@@ -466,10 +475,8 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
         # Check if training is complete
         if session.is_complete():
             audio_handler.queue_speech_priority("Trening zakończony.")
-            socketio.emit('training-complete', {
-                'totalRightReps': session.state.total_right_reps,
-                'totalLeftReps': session.state.total_left_reps
-            })
+            stats = session.get_completion_stats()
+            socketio.emit('training-complete', stats)
             audio_handler.wait_for_speech(timeout=5)
             break
         

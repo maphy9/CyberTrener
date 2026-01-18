@@ -1,11 +1,11 @@
 {
-  "neutral_trunk_angle": 168.7421052631579,
-  "right_min_angle": 19.75263157894737,
-  "right_max_angle": 168.8947368421053,
-  "left_min_angle": 16.642105263157895,
-  "left_max_angle": 166.87894736842105,
+  "neutral_trunk_angle": 167.87500000000003,
+  "right_min_angle": 27.127777777777776,
+  "right_max_angle": 167.35263157894738,
+  "left_min_angle": 18.789473684210527,
+  "left_max_angle": 168.59473684210525,
   "vertical_tolerance": 20,
-  "trunk_tolerance": 21.257894736842104,
+  "trunk_tolerance": 22.12499999999997,
   "calibrated": true,
-  "calibration_date": "2026-01-18T18:12:02.088869"
+  "calibration_date": "2026-01-18T18:24:34.876777"
 }
