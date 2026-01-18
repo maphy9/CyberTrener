@@ -1,39 +1,60 @@
-// Set exercise name dynamically
+// Load training settings from localStorage
+const trainingSettings = JSON.parse(
+  localStorage.getItem("trainingSettings"),
+) || {
+  exercises: ["bicep_curl", "overhead_press"],
+  repsPerExercise: { bicep_curl: 10, overhead_press: 10 },
+  rounds: 3,
+  cameraSettings: {
+    front: { type: "physical", value: 0 },
+    profile: { type: "ip", value: "" },
+  },
+  forceCalibration: false,
+};
+
+const sessionMode = localStorage.getItem("sessionMode") || "unified";
+
+// Exercise name mapping
+const EXERCISE_NAMES = {
+  bicep_curl: "Uginanie przedramion",
+  overhead_press: "Wyciskanie nad głowę",
+};
+
+// Set initial UI state - show calibration/connect prompt
 const exerciseNameSpan = document.getElementById("exercise-name");
-const exerciseType = localStorage.getItem("exerciseType") || "bicep_curl";
+const roundInfo = document.getElementById("round-info");
+const roundText = document.getElementById("round-text");
+
+// Initial state: Show calibration prompt, hide exercise-specific info
 if (exerciseNameSpan) {
-  if (exerciseType === "overhead_press") {
-    const leftRepRow = document.querySelector('.stat-row:nth-child(2)');
-  if (leftRepRow) {
-    leftRepRow.style.display = 'none';
-  }
-  const rightLabel = document.querySelector('.stat-row:nth-child(1) .stat-label');
-  if (rightLabel) {
-    rightLabel.textContent = 'Powtórzenia:';
-  }
-  }
+  exerciseNameSpan.textContent = "Kalibracja";
 }
+if (roundText) {
+  roundText.textContent = "Kliknij POŁĄCZ";
+}
+
+// Hide stats box initially (will be shown after calibration)
+const targetRepsSpan = document.getElementById("target-reps");
+const targetRepsLeftSpan = document.getElementById("target-reps-left");
+const statsBoxInit = document.getElementById("stats-box");
+if (statsBoxInit) {
+  statsBoxInit.style.display = "none";
+}
+
 let timerInterval;
 let seconds = 0;
 let timerStarted = false;
 let isConnected = false;
 let isAnalyzing = false;
 let isCalibrating = false;
+let currentPhase = "connecting"; // 'connecting', 'calibration', 'exercise', 'complete'
 
 const socket = io("http://localhost:5000");
 
-const cameraSettings = JSON.parse(localStorage.getItem("cameraSettings")) || {
-  front: { type: "physical", value: 0 },
-  profile: { type: "ip", value: "" },
-};
-
-const sessionMode = localStorage.getItem("sessionMode") || "training";
+const cameraSettings = trainingSettings.cameraSettings;
 
 const btnConnect = document.getElementById("btn-connect");
 const btnDisconnect = document.getElementById("btn-disconnect");
-const btnStart = document.getElementById("btn-start");
-const btnStop = document.getElementById("btn-stop");
-const analysisControls = document.getElementById("analysis-controls");
 const frontImg = document.getElementById("front-image");
 const profileImg = document.getElementById("profile-image");
 const rightRepsSpan = document.getElementById("right-reps");
@@ -48,9 +69,13 @@ const voiceStatus = document.getElementById("voice-status");
 const calibrationBox = document.getElementById("calibration-box");
 const calibrationStepText = document.getElementById("calibration-step-text");
 const calibrationInstruction = document.getElementById(
-  "calibration-instruction"
+  "calibration-instruction",
 );
 const calibrationProgress = document.getElementById("calibration-progress");
+const statsBox = document.getElementById("stats-box");
+const completeBox = document.getElementById("complete-box");
+const statRightRow = document.getElementById("stat-right-row");
+const statLeftRow = document.getElementById("stat-left-row");
 
 const STEP_NAMES = {
   neutral: "Pozycja neutralna",
@@ -58,6 +83,8 @@ const STEP_NAMES = {
   right_extend: "Prawa ręka - wyprost",
   left_flex: "Lewa ręka - zgięcie",
   left_extend: "Lewa ręka - wyprost",
+  overhead_start: "Wyciskanie - start",
+  overhead_top: "Wyciskanie - góra",
   complete: "Zakończono",
 };
 
@@ -67,25 +94,84 @@ const STEP_ORDER = [
   "right_extend",
   "left_flex",
   "left_extend",
+  "overhead_start",
+  "overhead_top",
 ];
 
 function showCalibrationUI() {
   if (calibrationBox) {
     calibrationBox.style.display = "block";
   }
-  const statsCompact = document.querySelector(".stats-compact");
-  if (statsCompact) {
-    statsCompact.style.display = "none";
+  if (statsBox) {
+    statsBox.style.display = "none";
   }
+  currentPhase = "calibration";
 }
 
 function hideCalibrationUI() {
   if (calibrationBox) {
     calibrationBox.style.display = "none";
   }
-  const statsCompact = document.querySelector(".stats-compact");
-  if (statsCompact) {
-    statsCompact.style.display = "block";
+  if (statsBox) {
+    statsBox.style.display = "block";
+  }
+}
+
+function showExerciseUI() {
+  hideCalibrationUI();
+  if (completeBox) {
+    completeBox.style.display = "none";
+  }
+  currentPhase = "exercise";
+}
+
+function showCompleteUI(stats) {
+  if (statsBox) {
+    statsBox.style.display = "none";
+  }
+  if (completeBox) {
+    completeBox.style.display = "block";
+
+    const totalRepsEl = document.getElementById("total-reps");
+    const totalErrorsEl = document.getElementById("total-errors");
+    const breakdownEl = document.getElementById("exercise-breakdown");
+
+    if (totalRepsEl) totalRepsEl.textContent = stats.totalReps || 0;
+    if (totalErrorsEl) totalErrorsEl.textContent = stats.totalErrors || 0;
+
+    if (breakdownEl && stats.exerciseStats) {
+      let html = '<div class="exercise-breakdown-list">';
+      for (const [name, data] of Object.entries(stats.exerciseStats)) {
+        html += `<p>${name}: <strong>${data.reps}</strong> powt., <strong>${data.errors}</strong> błędów</p>`;
+      }
+      html += "</div>";
+      breakdownEl.innerHTML = html;
+    }
+  }
+  currentPhase = "complete";
+}
+
+function updateExerciseDisplay(exerciseType) {
+  // Update exercise name
+  if (exerciseNameSpan) {
+    exerciseNameSpan.textContent = EXERCISE_NAMES[exerciseType] || exerciseType;
+  }
+
+  // Show/hide left arm row based on exercise type
+  if (statLeftRow) {
+    if (exerciseType === "overhead_press") {
+      statLeftRow.style.display = "none";
+      if (statRightRow) {
+        const label = statRightRow.querySelector(".stat-label");
+        if (label) label.textContent = "Powtórzenia:";
+      }
+    } else {
+      statLeftRow.style.display = "flex";
+      if (statRightRow) {
+        const label = statRightRow.querySelector(".stat-label");
+        if (label) label.textContent = "Prawe ramię:";
+      }
+    }
   }
 }
 
@@ -181,16 +267,12 @@ btnConnect.addEventListener("click", () => {
   btnConnect.disabled = true;
   btnConnect.textContent = "ŁĄCZENIE...";
 
-  if (sessionMode === "calibration") {
-    isCalibrating = true;
-    showCalibrationLoading();
-    setVoiceStatus("Łączenie z kamerami...");
-  }
+  setVoiceStatus("Łączenie z kamerami...");
 
   socket.emit("start-session", {
     cameras: cameraSettings,
     mode: sessionMode,
-    exerciseType: exerciseType
+    trainingSettings: trainingSettings,
   });
   btnDisconnect.disabled = false;
   isConnected = true;
@@ -201,26 +283,10 @@ btnDisconnect.addEventListener("click", () => {
   fullDisconnect();
 });
 
-btnStart.addEventListener("click", () => {
-  socket.emit("start-analysis");
-  btnStart.textContent = "URUCHAMIAM...";
-  btnStart.disabled = true;
-});
-
-btnStop.addEventListener("click", () => {
-  socket.emit("stop-analysis");
-  btnStop.textContent = "ZATRZYMUJĘ...";
-  btnStop.disabled = true;
-});
-
 function fullDisconnect() {
   isConnected = false;
   isAnalyzing = false;
   btnConnect.textContent = "CONNECT";
-
-  if (analysisControls) analysisControls.style.display = "none";
-  if (btnStart) btnStart.disabled = false;
-  if (btnStop) btnStop.disabled = true;
 
   resetTimer();
   resetUI();
@@ -243,33 +309,65 @@ function changeStateToConnected() {
 }
 
 socket.on("status", (data) => {
-  btnConnect.textContent = "CONNECT";
-  if (sessionMode !== "calibration" && analysisControls) {
-    analysisControls.style.display = "flex";
-  }
+  btnConnect.textContent = "POŁĄCZ";
   if (data.state === "waiting") {
-    if (btnStart) {
-      btnStart.disabled = false;
-      btnStart.textContent = "ZACZNIJ";
-    }
-    if (btnStop) btnStop.disabled = true;
     isAnalyzing = false;
     setVoiceStatus("Powiedz 'zacznij' lub kliknij przycisk");
   } else if (data.state === "analyzing") {
-    if (btnStart) btnStart.disabled = true;
-    if (btnStop) {
-      btnStop.disabled = false;
-      btnStop.textContent = "PAUZA";
-    }
     isAnalyzing = true;
-    setVoiceStatus("Trening w toku...");
+    setVoiceStatus(
+      "Trening w toku... (powiedz 'następne' lub 'poprzednie' aby zmienić ćwiczenie)",
+    );
     startTimer();
   }
 });
 
+// New unified session events
+socket.on("session-phase", (data) => {
+  if (data.phase === "calibration") {
+    isCalibrating = true;
+    showCalibrationLoading();
+    setVoiceStatus("Rozpoczynam kalibrację...");
+  } else if (data.phase === "exercise") {
+    isCalibrating = false;
+    showExerciseUI();
+  }
+});
+
+socket.on("training-state", (data) => {
+  // Update exercise name
+  if (exerciseNameSpan && data.currentExercise) {
+    exerciseNameSpan.textContent = data.currentExercise;
+  }
+
+  // Update round info
+  if (roundText) {
+    roundText.textContent = `Runda ${data.currentRound}/${data.totalRounds}`;
+  }
+
+  // Update target reps
+  if (targetRepsSpan) {
+    targetRepsSpan.textContent = data.targetReps || 10;
+  }
+  if (targetRepsLeftSpan) {
+    targetRepsLeftSpan.textContent = data.targetReps || 10;
+  }
+
+  // Update exercise type display
+  if (data.currentExerciseType) {
+    updateExerciseDisplay(data.currentExerciseType);
+  }
+});
+
+socket.on("training-complete", (data) => {
+  showCompleteUI(data);
+  setVoiceStatus("Trening zakończony! 🎉");
+  stopTimer();
+});
+
 socket.on("connection-error", (data) => {
   alert(
-    `Błąd połączenia z kamerą: ${data.message}\nSprawdź ustawienia kamer na stronie głównej.`
+    `Błąd połączenia z kamerą: ${data.message}\nSprawdź ustawienia kamer na stronie głównej.`,
   );
   fullDisconnect();
   if (sessionMode === "calibration") {
@@ -314,16 +412,13 @@ socket.on("calibration-complete", (data) => {
     calibrationStepText.textContent = "Zakończono!";
   }
   if (calibrationInstruction) {
-    calibrationInstruction.textContent = "Kalibracja zakończona pomyślnie.";
+    calibrationInstruction.textContent =
+      "Kalibracja zakończona. Przechodzimy do treningu...";
   }
 
-  setVoiceStatus("Kalibracja zakończona! Przekierowuję...");
-  localStorage.setItem("sessionMode", "training");
-  setTimeout(() => {
-    hideCalibrationUI();
-    socket.emit("end-session");
-    window.location.href = "/";
-  }, 2000);
+  setVoiceStatus("Kalibracja zakończona! Rozpoczynam trening...");
+
+  // Transition to exercise phase will be handled by session-phase event
 });
 
 socket.on("session-ended", () => {

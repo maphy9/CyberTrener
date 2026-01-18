@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
@@ -15,78 +15,181 @@
       <h1 class="app-title">CYBERTRENER</h1>
       <p class="app-subtitle">Twój inteligentny asystent treningowy</p>
 
-      <div class="camera-settings">
-        <div class="camera-setup">
-          <h3>Kamera frontalna</h3>
-          <div class="setup-options">
-            <label class="radio-option">
-              <input type="radio" name="front-type" value="physical" checked />
-              <span>Fizyczne połączenie</span>
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="front-type" value="ip" />
-              <span>Połączenie IP</span>
-            </label>
-          </div>
-          <div class="setup-input" id="front-physical-input">
-            <label>Indeks kamery:</label>
-            <input type="number" id="front-index" value="0" min="0" />
-          </div>
-          <div class="setup-input" id="front-ip-input" style="display: none">
-            <label>Adres URL:</label>
-            <input
-              type="text"
-              id="front-url"
-              placeholder="http://192.168.1.100:8080/video"
-            />
-          </div>
-        </div>
-
-        <div class="camera-setup">
-          <h3>Kamera profilowa</h3>
-          <p class="camera-note">Kamera musi być skierowana na prawą rękę</p>
-          <div class="setup-options">
-            <label class="radio-option">
-              <input type="radio" name="profile-type" value="physical" />
-              <span>Fizyczne połączenie</span>
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="profile-type" value="ip" checked />
-              <span>Połączenie IP</span>
-            </label>
-          </div>
-          <div
-            class="setup-input"
-            id="profile-physical-input"
-            style="display: none"
-          >
-            <label>Indeks kamery:</label>
-            <input type="number" id="profile-index" value="1" min="0" />
-          </div>
-          <div class="setup-input" id="profile-ip-input">
-            <label>Adres URL:</label>
-            <input
-              type="text"
-              id="profile-url"
-              placeholder="http://192.168.1.101:8080/video"
-            />
-          </div>
-        </div>
-      </div>
-
       <div class="menu-buttons">
-        <button class="btn btn-primary" id="start-bicep-curl-btn">
-          Bicep Curl
+        <button class="btn btn-primary" id="start-training-btn">
+          🎯 Rozpocznij trening
         </button>
-        <button class="btn btn-primary" id="start-overhead-press-btn">
-          Overhead Press
+        <button class="btn btn-secondary" id="history-btn">
+          📜 Historia treningów
         </button>
-        <button class="btn btn-secondary" id="start-calibration-btn">
-          Kalibracja
+        <button class="btn btn-secondary" id="settings-btn">
+          ⚙️ Ustawienia
         </button>
       </div>
+
       <p class="calibration-status" id="calibration-status"></p>
       <p class="version">Wersja Beta</p>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>⚙️ Ustawienia treningu</h2>
+          <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-content">
+          <!-- Training Settings Section -->
+          <div class="settings-section">
+            <h3>📊 Parametry treningu</h3>
+
+            <div class="setting-row">
+              <label for="rounds">Liczba rund (podejść):</label>
+              <input type="number" id="rounds" value="3" min="1" max="10" />
+            </div>
+          </div>
+
+          <!-- Exercise Order Section -->
+          <div class="settings-section">
+            <h3>📝 Kolejność ćwiczeń</h3>
+            <p class="settings-hint">
+              Przeciągnij aby zmienić kolejność. Ustaw powtórzenia dla każdego
+              ćwiczenia.
+            </p>
+
+            <ul class="exercise-list" id="exercise-list">
+              <li
+                class="exercise-item"
+                data-exercise="bicep_curl"
+                draggable="true"
+              >
+                <span class="drag-handle">⋮⋮</span>
+                <span class="exercise-name">Uginanie przedramion</span>
+                <div class="exercise-reps">
+                  <input
+                    type="number"
+                    class="exercise-reps-input"
+                    value="10"
+                    min="1"
+                    max="50"
+                  />
+                  <span class="reps-label">powt.</span>
+                </div>
+                <label class="exercise-toggle">
+                  <input type="checkbox" checked data-exercise="bicep_curl" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </li>
+              <li
+                class="exercise-item"
+                data-exercise="overhead_press"
+                draggable="true"
+              >
+                <span class="drag-handle">⋮⋮</span>
+                <span class="exercise-name">Wyciskanie nad głowę</span>
+                <div class="exercise-reps">
+                  <input
+                    type="number"
+                    class="exercise-reps-input"
+                    value="10"
+                    min="1"
+                    max="50"
+                  />
+                  <span class="reps-label">powt.</span>
+                </div>
+                <label class="exercise-toggle">
+                  <input
+                    type="checkbox"
+                    checked
+                    data-exercise="overhead_press"
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Camera Settings Section -->
+          <div class="settings-section">
+            <h3>📷 Kamery</h3>
+
+            <div class="camera-setup">
+              <h4>Kamera frontalna</h4>
+              <div class="setup-options">
+                <label class="radio-option">
+                  <input
+                    type="radio"
+                    name="front-type"
+                    value="physical"
+                    checked
+                  />
+                  <span>Fizyczne połączenie</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="front-type" value="ip" />
+                  <span>Połączenie IP</span>
+                </label>
+              </div>
+              <div class="setup-input" id="front-physical-input">
+                <label>Indeks kamery:</label>
+                <input type="number" id="front-index" value="0" min="0" />
+              </div>
+              <div
+                class="setup-input"
+                id="front-ip-input"
+                style="display: none"
+              >
+                <label>Adres URL:</label>
+                <input
+                  type="text"
+                  id="front-url"
+                  placeholder="http://192.168.1.100:8080/video"
+                />
+              </div>
+            </div>
+
+            <div class="camera-setup">
+              <h4>Kamera profilowa</h4>
+              <p class="camera-note">
+                Kamera musi być skierowana na prawą rękę
+              </p>
+              <div class="setup-options">
+                <label class="radio-option">
+                  <input type="radio" name="profile-type" value="physical" />
+                  <span>Fizyczne połączenie</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="profile-type" value="ip" checked />
+                  <span>Połączenie IP</span>
+                </label>
+              </div>
+              <div
+                class="setup-input"
+                id="profile-physical-input"
+                style="display: none"
+              >
+                <label>Indeks kamery:</label>
+                <input type="number" id="profile-index" value="1" min="0" />
+              </div>
+              <div class="setup-input" id="profile-ip-input">
+                <label>Adres URL:</label>
+                <input
+                  type="text"
+                  id="profile-url"
+                  placeholder="http://192.168.1.101:8080/video"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="save-settings-btn">
+            Zapisz ustawienia
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="static/index.js"></script>

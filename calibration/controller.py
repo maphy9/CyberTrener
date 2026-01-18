@@ -1,6 +1,10 @@
 import numpy as np
 from core.pose_analyzer import PoseAnalyzer
 from exercises.bicep_curl.metrics import calculate_front_view, calculate_profile_view
+from exercises.overhead_press.metrics import (
+    calculate_front_view as calculate_overhead_front,
+    calculate_profile_view as calculate_overhead_profile
+)
 from calibration.data import CalibrationData
 
 
@@ -48,8 +52,13 @@ class MeasurementBuffer:
 
 class CalibrationController:
     def __init__(self):
+        # Bicep curl analyzers
         self.front_analyzer = PoseAnalyzer(calculate_front_view)
         self.profile_analyzer = PoseAnalyzer(calculate_profile_view)
+        # Overhead press analyzers
+        self.overhead_front_analyzer = PoseAnalyzer(calculate_overhead_front)
+        self.overhead_profile_analyzer = PoseAnalyzer(calculate_overhead_profile)
+        
         self.current_step = 'neutral'
         self.measurements = {}
         self.measurement_buffer = MeasurementBuffer(buffer_size=20, max_std_dev=3.0)
@@ -63,6 +72,8 @@ class CalibrationController:
             'right_extend': 'Wyprostuj prawą rękę całkowicie',
             'left_flex': 'Ugnij lewą rękę maksymalnie do góry',
             'left_extend': 'Wyprostuj lewą rękę całkowicie',
+            'overhead_start': 'Podnieś obie ręce na wysokość barków',
+            'overhead_top': 'Wyciśnij ręce nad głowę',
             'complete': 'Kalibracja zakończona!'
         }
         return instructions.get(self.current_step, '')
@@ -73,7 +84,9 @@ class CalibrationController:
             'right_flex': 'right_flex_angle',
             'right_extend': 'right_extend_angle',
             'left_flex': 'left_flex_angle',
-            'left_extend': 'left_extend_angle'
+            'left_extend': 'left_extend_angle',
+            'overhead_start': 'overhead_start_angle',
+            'overhead_top': 'overhead_top_angle'
         }
         key = progress_keys.get(self.current_step)
         if key:
@@ -81,11 +94,18 @@ class CalibrationController:
         return 1.0 if self.current_step == 'complete' else 0.0
     
     def process_frames(self, front_results, profile_results):
+        # Process bicep curl metrics
         self.front_analyzer.process_frame(front_results)
         self.profile_analyzer.process_frame(profile_results)
         
+        # Process overhead press metrics
+        self.overhead_front_analyzer.process_frame(front_results)
+        self.overhead_profile_analyzer.process_frame(profile_results)
+        
         front_metrics = self.front_analyzer.get_metrics()
         profile_metrics = self.profile_analyzer.get_metrics()
+        overhead_front_metrics = self.overhead_front_analyzer.get_metrics()
+        overhead_profile_metrics = self.overhead_profile_analyzer.get_metrics()
         
         if self.current_step == 'neutral':
             trunk_angle = profile_metrics.get('trunk_angle')
@@ -94,7 +114,7 @@ class CalibrationController:
                 self.measurements['neutral_trunk'] = mean_value
                 self.measurement_buffer.clear()
                 self.current_step = 'right_flex'
-                return True, "Dobrze! Teraz ugnij prawą rękę"
+                return True, "Teraz ugnij prawą rękę"
         
         elif self.current_step == 'right_flex':
             right_angle = front_metrics.get('right_angle')
@@ -108,7 +128,7 @@ class CalibrationController:
                     self.measurements['right_verticality'] = right_vert
                     self.measurement_buffer.clear()
                     self.current_step = 'right_extend'
-                    return True, "Świetnie! Teraz wyprostuj prawą rękę"
+                    return True, "Teraz wyprostuj prawą rękę"
         
         elif self.current_step == 'right_extend':
             right_angle = front_metrics.get('right_angle')
@@ -120,7 +140,7 @@ class CalibrationController:
                     self.measurements['right_extend_angle'] = mean_value
                     self.measurement_buffer.clear()
                     self.current_step = 'left_flex'
-                    return True, "Doskonale! Teraz ugnij lewą rękę"
+                    return True, "Teraz ugnij lewą rękę"
         
         elif self.current_step == 'left_flex':
             left_angle = front_metrics.get('left_angle')
@@ -134,7 +154,7 @@ class CalibrationController:
                     self.measurements['left_verticality'] = left_vert
                     self.measurement_buffer.clear()
                     self.current_step = 'left_extend'
-                    return True, "Rewelacja! Teraz wyprostuj lewą rękę"
+                    return True, "Teraz wyprostuj lewą rękę"
         
         elif self.current_step == 'left_extend':
             left_angle = front_metrics.get('left_angle')
@@ -144,6 +164,46 @@ class CalibrationController:
                 mean_value, is_stable = self.measurement_buffer.add('left_extend_angle', left_angle)
                 if is_stable:
                     self.measurements['left_extend_angle'] = mean_value
+                    self.measurement_buffer.clear()
+                    self.current_step = 'overhead_start'
+                    return True, "Teraz podnieś obie ręce na wysokość barków"
+        
+        elif self.current_step == 'overhead_start':
+            # Check if arms are at shoulder level (around 90 degrees elbow angle)
+            avg_angle = overhead_front_metrics.get('avg_angle', 180)
+            right_wrist_y = overhead_front_metrics.get('right_wrist_y', 0.5)
+            left_wrist_y = overhead_front_metrics.get('left_wrist_y', 0.5)
+            arm_sync_diff = overhead_front_metrics.get('arm_sync_diff', 0)
+            trunk_angle = overhead_profile_metrics.get('trunk_angle', 180)
+            
+            # Arms should be bent at roughly 90 degrees (at shoulder level)
+            if 70 <= avg_angle <= 110:
+                mean_angle, angle_stable = self.measurement_buffer.add('overhead_start_angle', avg_angle)
+                
+                if angle_stable:
+                    self.measurements['overhead_start_angle'] = mean_angle
+                    # Store wrist Y positions (average of both wrists)
+                    self.measurements['overhead_start_wrist_y'] = (right_wrist_y + left_wrist_y) / 2
+                    self.measurements['overhead_arm_sync'] = arm_sync_diff
+                    self.measurements['overhead_trunk_deviation'] = abs(trunk_angle - 180)
+                    self.measurement_buffer.clear()
+                    self.current_step = 'overhead_top'
+                    return True, "Teraz wyciśnij ręce maksymalnie nad głowę"
+        
+        elif self.current_step == 'overhead_top':
+            # Check if arms are fully extended overhead
+            avg_angle = overhead_front_metrics.get('avg_angle', 90)
+            right_wrist_y = overhead_front_metrics.get('right_wrist_y', 0.5)
+            left_wrist_y = overhead_front_metrics.get('left_wrist_y', 0.5)
+            
+            # Arms should be nearly straight (extended overhead)
+            if avg_angle >= 155:
+                mean_angle, angle_stable = self.measurement_buffer.add('overhead_top_angle', avg_angle)
+                
+                if angle_stable:
+                    self.measurements['overhead_top_angle'] = mean_angle
+                    # Store wrist Y position at top
+                    self.measurements['overhead_top_wrist_y'] = (right_wrist_y + left_wrist_y) / 2
                     self.measurement_buffer.clear()
                     self.current_step = 'complete'
                     return True, "Kalibracja ukończona!"

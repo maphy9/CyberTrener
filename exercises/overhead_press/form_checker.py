@@ -2,72 +2,95 @@
 from exercises.overhead_press.constants import (
     TRUNK_ANGLE_THRESHOLD,
     ARM_SYNC_THRESHOLD,
-    ELBOW_FORWARD_MIN,
     STABILITY_FRAMES
 )
 
 
 class OverheadPressValidator:
-    def __init__(self):
-        self.neutral_trunk_angle = 180  
-        self.trunk_error_frames = 0
+    def __init__(self, calibration=None):
+        self.calibration = calibration
+        
+        if calibration:
+            self.neutral_trunk_angle = calibration.neutral_trunk_angle
+            self.trunk_tolerance = calibration.overhead_trunk_tolerance
+            self.arm_sync_tolerance = calibration.overhead_arm_sync_tolerance
+        else:
+            self.neutral_trunk_angle = 180
+            self.trunk_tolerance = TRUNK_ANGLE_THRESHOLD
+            self.arm_sync_tolerance = ARM_SYNC_THRESHOLD
+        
         self.rep_history = []
         self.max_history = 10
+        
+        self.movement_trunk_errors = 0
+        self.movement_sync_errors = 0
+        self.movement_frames = 0
+        
+        self.trunk_error_streak = 0
+        self.sync_error_streak = 0
+    
+    def track_movement(self, front_metrics, profile_metrics):
+        in_active_zone = front_metrics.get('in_active_zone', False)
+        if not in_active_zone:
+            self.movement_trunk_errors = 0
+            self.movement_sync_errors = 0
+            self.movement_frames = 0
+            self.trunk_error_streak = 0
+            self.sync_error_streak = 0
+            return
+        
+        self.movement_frames += 1
+        
+        trunk_deviation = profile_metrics.get('trunk_deviation', 0)
+        if trunk_deviation > self.trunk_tolerance:
+            self.trunk_error_streak += 1
+            if self.trunk_error_streak >= STABILITY_FRAMES:
+                self.movement_trunk_errors += 1
+        else:
+            self.trunk_error_streak = 0
+        
+        arm_sync_diff = front_metrics.get('arm_sync_diff', 0)
+        wrist_y_diff = front_metrics.get('wrist_y_diff', 0)
+        
+        if arm_sync_diff > self.arm_sync_tolerance or wrist_y_diff > 0.08:
+            self.sync_error_streak += 1
+            if self.sync_error_streak >= STABILITY_FRAMES:
+                self.movement_sync_errors += 1
+        else:
+            self.sync_error_streak = 0
     
     def validate_rep(self, front_metrics, profile_metrics):
-        """
-        Validate overhead press form for a single rep.
-        Returns: (valid, error_code, error_parts)
-        """
-        
-        trunk_angle = profile_metrics.get('trunk_angle')
-        trunk_valid = True
-        if trunk_angle is not None:
-            trunk_deviation = abs(trunk_angle - self.neutral_trunk_angle)
-            if trunk_deviation > TRUNK_ANGLE_THRESHOLD:
-                trunk_valid = False
-                self.trunk_error_frames += 1
-            else:
-                self.trunk_error_frames = max(0, self.trunk_error_frames - 1)
-        
-        # Trunk error needs to be consistent
-        if not trunk_valid and self.trunk_error_frames >= STABILITY_FRAMES:
-            return False, 'trunk_tilted', ['trunk']
-        
-        # Check arm synchronization (both arms should move together)
-        arm_sync_diff = front_metrics.get('arm_sync_diff', 0)
-        if arm_sync_diff > ARM_SYNC_THRESHOLD:
-            return False, 'arms_not_synchronized', ['left_arm', 'right_arm']
-        
-        # Check elbow position (elbows should be forward, not flaring to sides)
-        elbow_forward_angle = profile_metrics.get('elbow_forward_angle', 0)
-        if elbow_forward_angle < ELBOW_FORWARD_MIN:
-            return False, 'elbows_too_wide', ['right_arm']
-        
-        # Check for full lockout at top
-        avg_angle = front_metrics.get('avg_angle', 0)
-        phase = front_metrics.get('phase', '')
-        if phase == 'extended' and avg_angle < 160:
-            return False, 'incomplete_lockout', ['left_arm', 'right_arm']
+        if self.movement_frames > 0:
+            trunk_error_ratio = self.movement_trunk_errors / self.movement_frames
+            sync_error_ratio = self.movement_sync_errors / self.movement_frames
+            
+            self.movement_trunk_errors = 0
+            self.movement_sync_errors = 0
+            self.movement_frames = 0
+            self.trunk_error_streak = 0
+            self.sync_error_streak = 0
+            
+            if trunk_error_ratio > 0.15:
+                return False, 'trunk_tilted', ['trunk']
+            
+            if sync_error_ratio > 0.15:
+                return False, 'arms_not_synchronized', ['left_arm', 'right_arm']
         
         return True, None, []
     
     def record_valid_rep(self):
-        """Record a valid rep in history"""
         self.rep_history.append('overhead_press')
         if len(self.rep_history) > self.max_history:
             self.rep_history.pop(0)
     
     def reset(self):
-        """Reset validator state"""
-        self.trunk_error_frames = 0
         self.rep_history = []
+        self.movement_trunk_errors = 0
+        self.movement_sync_errors = 0
+        self.movement_frames = 0
 
 
 ERROR_MESSAGES = {
     'trunk_tilted': 'Trzymaj plecy prosto',
     'arms_not_synchronized': 'Unoś obie ręce równomiernie',
-    'elbows_too_wide': 'Trzymaj łokcie do przodu',
-    'incomplete_lockout': 'Wyprostuj ręce całkowicie na górze',
-    'back_arch_excessive': 'Nie wyginaj pleców',
 }

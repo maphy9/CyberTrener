@@ -5,7 +5,8 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: radial-gradient(
+  background:
+    radial-gradient(
       ellipse at top,
       rgba(0, 212, 255, 0.08) 0%,
       transparent 50%
@@ -83,95 +84,6 @@
   letter-spacing: 2px;
 }
 
-.camera-settings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  width: 100%;
-  max-width: 800px;
-  margin-bottom: 2rem;
-}
-
-.camera-setup {
-  background: var(--dark-card);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 1.5rem;
-}
-
-.camera-setup h3 {
-  color: var(--primary);
-  margin-bottom: 0.5rem;
-  font-size: 1.2rem;
-}
-
-.camera-note {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-  font-style: italic;
-}
-
-.setup-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  margin-bottom: 1rem;
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.radio-option:hover {
-  background: rgba(0, 212, 255, 0.05);
-}
-
-.radio-option input[type="radio"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-.radio-option span {
-  color: var(--text);
-  font-size: 0.95rem;
-}
-
-.setup-input {
-  margin-top: 1rem;
-}
-
-.setup-input label {
-  display: block;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.setup-input input[type="number"],
-.setup-input input[type="text"] {
-  width: 100%;
-  padding: 0.8rem;
-  background: var(--dark-light);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
-}
-
-.setup-input input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
 .menu-buttons {
   display: flex;
   flex-direction: column;
@@ -201,7 +113,7 @@
 }
 
 .calibration-status.not-calibrated {
-  color: var(--warning);
+  color: var(--warning, var(--good));
 }
 
 .version {
@@ -210,14 +122,388 @@
   font-size: 0.85rem;
 }
 
-@media (max-width: 900px) {
-  .camera-settings {
-    grid-template-columns: 1fr;
-  }
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
 }
 
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: var(--dark-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(20px) scale(0.95);
+  transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2 {
+  color: var(--primary);
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--bad);
+}
+
+.modal-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Settings Sections */
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section h3 {
+  color: var(--primary);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.settings-hint {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+}
+
+.setting-row label {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.setting-row input[type="number"] {
+  width: 80px;
+  padding: 0.5rem;
+  background: var(--dark-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.setting-row input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Exercise List */
+.exercise-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.exercise-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--dark-light);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.exercise-item:hover {
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.exercise-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: grab;
+}
+
+.exercise-item .exercise-name {
+  flex: 1;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* Exercise Reps Input */
+.exercise-reps {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.exercise-reps-input {
+  width: 55px;
+  padding: 0.4rem 0.5rem;
+  background: var(--dark);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.exercise-reps-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.reps-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Toggle Switch */
+.exercise-toggle {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.exercise-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--dark);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 26px;
+  transition: 0.3s;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.exercise-toggle input:checked + .toggle-slider {
+  background-color: rgba(0, 212, 255, 0.2);
+  border-color: var(--primary);
+}
+
+.exercise-toggle input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+  background-color: var(--primary);
+}
+
+/* Camera Setup in Modal */
+.modal .camera-setup {
+  background: var(--dark-light);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal .camera-setup h4 {
+  color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.camera-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.setup-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.radio-option:hover {
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.radio-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.radio-option span {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.setup-input {
+  margin-top: 0.75rem;
+}
+
+.setup-input label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.setup-input input[type="number"],
+.setup-input input[type="text"] {
+  width: 100%;
+  padding: 0.6rem;
+  background: var(--dark);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.setup-input input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Calibration Info */
+.calibration-info {
+  padding: 0.75rem;
+  background: var(--dark-light);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.calibration-info p {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.calibration-info p.calibrated {
+  color: var(--perfect);
+}
+
+.calibration-info p.not-calibrated {
+  color: var(--good);
+}
+
+/* Small Button */
+.btn-small {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
 @media (max-width: 600px) {
   .app-title {
     font-size: 2rem;
+  }
+
+  .modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .setting-row input[type="number"] {
+    width: 100%;
   }
 }

@@ -1,14 +1,17 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 from threading import Thread, Event
 from camera import CameraStream
 from core.constants import *
-from processing import process_camera_streams, run_calibration_session
+from processing import process_camera_streams, run_calibration_session, run_unified_training_session
 from calibration.data import CalibrationData
+from database.repository import TrainingRepository
 
 processing_event = Event()
 analyzing_event = Event()
 processing_thread = None
+exercise_command_event = Event()
+exercise_command_type = [None]
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -21,6 +24,10 @@ def handle_index():
 def handle_training():
     return render_template('training.html')
 
+@app.route('/history')
+def handle_history():
+    return render_template('history.html')
+
 @app.route('/api/calibration-status')
 def handle_calibration_status():
     calibration = CalibrationData.load()
@@ -28,6 +35,29 @@ def handle_calibration_status():
         date_str = calibration.calibration_date[:10] if calibration.calibration_date else "Nieznana data"
         return jsonify({'calibrated': True, 'date': date_str})
     return jsonify({'calibrated': False, 'date': None})
+
+@app.route('/api/training-history')
+def handle_training_history():
+    sort_order = request.args.get('sort', 'desc')
+    date_from = request.args.get('dateFrom')
+    date_to = request.args.get('dateTo')
+    
+    sessions = TrainingRepository.get_all_sessions(sort_order, date_from, date_to)
+    return jsonify([s.to_dict() for s in sessions])
+
+@app.route('/api/training-history/<int:session_id>')
+def handle_training_detail(session_id):
+    session = TrainingRepository.get_session_detail(session_id)
+    if session:
+        return jsonify(session.to_dict())
+    return jsonify({'error': 'Session not found'}), 404
+
+@app.route('/api/training-history/<int:session_id>', methods=['DELETE'])
+def handle_delete_training(session_id):
+    deleted = TrainingRepository.delete_session(session_id)
+    if deleted:
+        return jsonify({'success': True})
+    return jsonify({'error': 'Session not found'}), 404
 
 @socketio.on('connect')
 def handle_connect():
@@ -52,11 +82,16 @@ def handle_start_session(data):
         return
     
     camera_config = data.get('cameras', data)
-    session_mode = data.get('mode', 'training')
-    exercise_type = data.get('exerciseType', 'bicep_curl')
+    session_mode = data.get('mode', 'unified')
+    training_settings = data.get('trainingSettings', {
+        'exercises': ['bicep_curl', 'overhead_press'],
+        'repsPerSet': 10,
+        'rounds': 3
+    })
+    force_calibration = training_settings.get('forceCalibration', False)
     
     print(f'New {session_mode} session started')
-    print(f'Exercise type: {exercise_type}')
+    print(f'Training settings: {training_settings}')
     print(f'Camera config: {camera_config}')
     processing_event.clear()
 
@@ -89,9 +124,16 @@ def handle_start_session(data):
             return
 
         if session_mode == 'calibration':
+            # Legacy calibration-only mode
             target_fn = run_calibration_session
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event)
+        elif session_mode == 'unified':
+            # New unified mode: calibration (if needed) + exercises
+            target_fn = run_unified_training_session
+            args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, training_settings, force_calibration)
         else:
+            # Legacy training mode (single exercise)
+            exercise_type = data.get('exerciseType', 'bicep_curl')
             target_fn = process_camera_streams
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, exercise_type)
 

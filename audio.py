@@ -104,7 +104,7 @@ class AudioHandler:
                 pass
     
     async def _generate_speech(self, text, output_file):
-        communicate = edge_tts.Communicate(text, self.voice)
+        communicate = edge_tts.Communicate(text, self.voice, rate="+15%")
         await communicate.save(output_file)
     
     def preload_speech(self, texts):
@@ -172,6 +172,10 @@ class AudioHandler:
 
 
 def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
+    """
+    Original voice command listener (for backward compatibility).
+    Only supports start/stop commands.
+    """
     recognizer = sr.Recognizer()
     recognizer.energy_threshold = 300
     recognizer.dynamic_energy_threshold = True
@@ -203,6 +207,64 @@ def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
                 if any(kw in text for kw in stop_keywords):
                     audio_handler.queue_speech("Pauza")
                     analyzing_event.clear()
+                
+        except sr.WaitTimeoutError:
+            continue
+        except Exception as e:
+            print(f"Speech recognition error: {e}")
+            continue
+
+
+def listen_for_voice_commands_unified(audio_handler, stop_event, analyzing_event, exercise_command_callback=None):
+    """
+    Enhanced voice command listener with exercise navigation support.
+    
+    Args:
+        audio_handler: AudioHandler instance for speech output
+        stop_event: Threading Event to stop the listener
+        analyzing_event: Threading Event to track analysis state
+        exercise_command_callback: Optional callback function for 'next' or 'previous' commands
+    """
+    recognizer = sr.Recognizer()
+    recognizer.energy_threshold = 300
+    recognizer.dynamic_energy_threshold = True
+    recognizer.pause_threshold = 0.5
+    
+    mic = sr.Microphone()
+    
+    with mic as source:
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+    
+    start_keywords = ['zacznij', 'zaczynaj', 'zaczyna', 'rozpocznij', 'zaczynam']
+    stop_keywords = ['pauza', 'pauzuj', 'wstrzymaj', 'przerwa']
+    next_keywords = ['następne', 'następny', 'dalej', 'kolejne', 'kolejny']
+    prev_keywords = ['poprzednie', 'poprzedni', 'wstecz', 'cofnij']
+    
+    while not stop_event.is_set():
+        try:
+            with mic as source:
+                audio = recognizer.listen(source, timeout=2, phrase_time_limit=4)
+            
+            try:
+                text = recognizer.recognize_google(audio, language="pl-PL").lower()
+                print(f"Voice command detected: {text}")
+            except sr.UnknownValueError:
+                continue
+            
+            if not analyzing_event.is_set():
+                if any(kw in text for kw in start_keywords):
+                    audio_handler.queue_speech("Zaczynam")
+                    analyzing_event.set()
+            else:
+                if any(kw in text for kw in stop_keywords):
+                    audio_handler.queue_speech("Pauza")
+                    analyzing_event.clear()
+                elif any(kw in text for kw in next_keywords):
+                    if exercise_command_callback:
+                        exercise_command_callback('next')
+                elif any(kw in text for kw in prev_keywords):
+                    if exercise_command_callback:
+                        exercise_command_callback('previous')
                 
         except sr.WaitTimeoutError:
             continue

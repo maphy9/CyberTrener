@@ -15,6 +15,13 @@
   padding-bottom: 0.8rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .back-btn {
@@ -38,23 +45,33 @@
 }
 
 .exercise-name {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  color: var(--primary);
-  text-align: center;
+  color: var(--text-muted);
+  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 60%;
+  margin: 0;
 }
 
 .timer {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-family: "Courier New", monospace;
-  color: var(--text-muted);
+  color: var(--primary);
   background: var(--dark-card);
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 8px;
+}
+
+.round-info {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  font-weight: 600;
+  background: rgba(0, 255, 136, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
 }
 
 .training-content {
@@ -170,7 +187,8 @@
   color: var(--text-muted);
   font-size: 0.95rem;
   position: relative;
-  background: linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+  background:
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
   background-size: 30px 30px;
   min-height: 0;
@@ -306,7 +324,11 @@
 }
 
 .calibration-box {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(120, 0, 255, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 212, 255, 0.15),
+    rgba(120, 0, 255, 0.1)
+  );
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 16px;
   padding: 1.5rem;
@@ -375,6 +397,125 @@
 }
 
 .step-dot.completed {
-  background: var(--success);
-  border-color: var(--success);
+  background: var(--secondary);
+  border-color: var(--secondary);
+}
+
+/* Header info with round display */
+.header-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  max-width: 60%;
+}
+
+.round-info {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  font-weight: 600;
+  background: rgba(0, 255, 136, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+/* Exercise navigation buttons */
+.exercise-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.exercise-nav .btn-small {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Target reps display */
+.stat-target {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.progress-row {
+  background: rgba(0, 212, 255, 0.05);
+  margin: 0 -1.2rem -1.2rem -1.2rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 0 0 16px 16px;
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+/* Training complete box */
+.complete-box {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 136, 0.15),
+    rgba(0, 212, 255, 0.1)
+  );
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.complete-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--secondary);
+  margin: 0 0 1.5rem 0;
+}
+
+.complete-stats {
+  margin-bottom: 1.5rem;
+}
+
+.complete-stats .total-reps-line {
+  font-size: 1.2rem;
+  color: var(--text);
+  margin: 0.5rem 0;
+}
+
+.complete-stats .total-reps-line strong {
+  color: var(--secondary);
+  font-size: 1.5rem;
+}
+
+.complete-stats .total-errors-line {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+}
+
+.complete-stats .total-errors-line strong {
+  color: var(--bad);
+}
+
+.exercise-breakdown-list {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exercise-breakdown-list p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0.4rem 0;
+}
+
+.exercise-breakdown-list strong {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.complete-box .btn {
+  padding: 0.8rem 1.5rem;
+}
+
+/* Small button variant */
+.btn-small {
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
 }
