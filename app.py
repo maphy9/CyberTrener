@@ -53,8 +53,10 @@ def handle_start_session(data):
     
     camera_config = data.get('cameras', data)
     session_mode = data.get('mode', 'training')
+    exercise_type = data.get('exerciseType', 'bicep_curl')
     
     print(f'New {session_mode} session started')
+    print(f'Exercise type: {exercise_type}')
     print(f'Camera config: {camera_config}')
     processing_event.clear()
 
@@ -91,7 +93,7 @@ def handle_start_session(data):
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event)
         else:
             target_fn = process_camera_streams
-            args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event)
+            args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, exercise_type)
 
         processing_thread = Thread(
             target=target_fn,

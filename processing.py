@@ -5,7 +5,11 @@ import time
 from audio import AudioHandler, listen_for_voice_commands
 from core.pose_drawing import draw_pose_with_errors
 from exercises.bicep_curl.controller import BicepCurlController
-from exercises.bicep_curl.metrics import reset_front_view_state, reset_profile_view_state
+from exercises.bicep_curl.metrics import reset_front_view_state as reset_bicep_front
+from exercises.bicep_curl.metrics import reset_profile_view_state as reset_bicep_profile
+from exercises.overhead_press.controller import OverheadPressController
+from exercises.overhead_press.metrics import reset_front_view_state as reset_overhead_front
+from exercises.overhead_press.metrics import reset_profile_view_state as reset_overhead_profile
 from calibration.controller import CalibrationController
 from calibration.data import CalibrationData
 
@@ -39,8 +43,8 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
     
     audio_handler.preload_speech(CALIBRATION_PHRASES)
     
-    reset_front_view_state()
-    reset_profile_view_state()
+    reset_bicep_front()
+    reset_bicep_profile()
     
     audio_handler.queue_speech("Rozpoczynam kalibrację")
     audio_handler.queue_speech(calibration.get_instructions())
@@ -123,7 +127,7 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
     profile_stream.stop()
 
 
-def process_camera_streams(socketio, front_stream, profile_stream, stop_event, analyzing_event):
+def process_camera_streams(socketio, front_stream, profile_stream, stop_event, analyzing_event, exercise_type='bicep_curl'):
     front_pose = mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
@@ -148,11 +152,17 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event, a
     
     socketio.emit('status', {'state': 'waiting'})
     
-    calibration_data = CalibrationData.load()
-    exercise = BicepCurlController(calibration_data)
-    
-    reset_front_view_state()
-    reset_profile_view_state()
+    if exercise_type == 'overhead_press':
+        print("Initializing Overhead Press exercise")
+        exercise = OverheadPressController()
+        reset_overhead_front()
+        reset_overhead_profile()
+    else:
+        print("Initializing Bicep Curl exercise")
+        calibration_data = CalibrationData.load()
+        exercise = BicepCurlController(calibration_data)
+        reset_bicep_front()
+        reset_bicep_profile()
     
     error_states = {}
     last_error_spoken = {}

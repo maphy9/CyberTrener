@@ -6,7 +6,8 @@ const frontPhysicalInput = document.getElementById("front-physical-input");
 const frontIpInput = document.getElementById("front-ip-input");
 const profilePhysicalInput = document.getElementById("profile-physical-input");
 const profileIpInput = document.getElementById("profile-ip-input");
-const startTrainingBtn = document.getElementById("start-training-btn");
+const startBicepCurlBtn = document.getElementById("start-bicep-curl-btn");
+const startOverheadPressBtn = document.getElementById("start-overhead-press-btn");
 const startCalibrationBtn = document.getElementById("start-calibration-btn");
 const calibrationStatus = document.getElementById("calibration-status");
 
@@ -135,10 +136,9 @@ profileTypeRadios.forEach((radio) => {
   });
 });
 
-startTrainingBtn.addEventListener("click", () => {
+function startExercise(exerciseType) {
   const settings = getCameraSettings();
   if (!settings) return;
-
   fetch("/api/calibration-status")
     .then((res) => res.json())
     .then((data) => {
@@ -151,14 +151,23 @@ startTrainingBtn.addEventListener("click", () => {
       } else {
         localStorage.setItem("cameraSettings", JSON.stringify(settings));
         localStorage.setItem("sessionMode", "training");
+        localStorage.setItem("exerciseType", exerciseType); // ADD THIS LINE
         window.location.href = "/training";
       }
     })
     .catch(() => {
       localStorage.setItem("cameraSettings", JSON.stringify(settings));
       localStorage.setItem("sessionMode", "training");
+      localStorage.setItem("exerciseType", exerciseType); // ADD THIS LINE
       window.location.href = "/training";
     });
+}
+
+startBicepCurlBtn.addEventListener("click", () => {
+  startExercise("bicep_curl");
+});
+startOverheadPressBtn.addEventListener("click", () => {
+  startExercise("overhead_press");
 });
 
 startCalibrationBtn.addEventListener("click", () => {

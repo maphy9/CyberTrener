@@ -1,3 +1,18 @@
+// Set exercise name dynamically
+const exerciseNameSpan = document.getElementById("exercise-name");
+const exerciseType = localStorage.getItem("exerciseType") || "bicep_curl";
+if (exerciseNameSpan) {
+  if (exerciseType === "overhead_press") {
+    const leftRepRow = document.querySelector('.stat-row:nth-child(2)');
+  if (leftRepRow) {
+    leftRepRow.style.display = 'none';
+  }
+  const rightLabel = document.querySelector('.stat-row:nth-child(1) .stat-label');
+  if (rightLabel) {
+    rightLabel.textContent = 'Powtórzenia:';
+  }
+  }
+}
 let timerInterval;
 let seconds = 0;
 let timerStarted = false;
@@ -175,6 +190,7 @@ btnConnect.addEventListener("click", () => {
   socket.emit("start-session", {
     cameras: cameraSettings,
     mode: sessionMode,
+    exerciseType: exerciseType
   });
   btnDisconnect.disabled = false;
   isConnected = true;
