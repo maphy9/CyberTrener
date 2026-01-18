@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 from threading import Thread, Event, Lock
 import time
+from datetime import datetime
 from audio import AudioHandler, listen_for_voice_commands, listen_for_voice_commands_unified
 from core.pose_drawing import draw_pose_with_errors
 from exercises.bicep_curl.controller import BicepCurlController
@@ -13,6 +14,7 @@ from exercises.overhead_press.metrics import reset_profile_view_state as reset_o
 from calibration.controller import CalibrationController
 from calibration.data import CalibrationData
 from training.session_controller import TrainingSessionController, TrainingSettings, SessionPhase, get_reset_functions
+from database.repository import TrainingRepository
 
 mp_pose = mp.solutions.pose
 
@@ -413,6 +415,7 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
     
     # === EXERCISE PHASE ===
     socketio.emit('session-phase', {'phase': 'exercise'})
+    session_start_time = time.time()
     
     # Initialize session controller
     settings = TrainingSettings.from_dict(training_settings)
@@ -480,6 +483,19 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
         if session.is_complete():
             audio_handler.queue_speech_priority("Trening zakończony.")
             stats = session.get_completion_stats()
+            
+            detailed = session.get_detailed_results()
+            session_data = {
+                'timestamp': datetime.now().isoformat(),
+                'duration_seconds': int(time.time() - session_start_time),
+                'total_reps': detailed['total_reps'],
+                'total_errors': detailed['total_errors'],
+                'rounds': detailed['settings']['rounds'],
+                'exercises_config': detailed['settings'],
+                'exercise_results': detailed['exercise_results']
+            }
+            TrainingRepository.save_session(session_data)
+            
             socketio.emit('training-complete', stats)
             audio_handler.wait_for_speech(timeout=5)
             break

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historia treningów - CyberTrener</title>
+    <link rel="stylesheet" href="static/colors.css" />
+    <link rel="stylesheet" href="static/history-style.css" />
+  </head>
+  <body>
+    <div class="history-page">
+      <header class="history-header">
+        <a href="/" class="back-btn">← Powrót</a>
+        <h1>📜 Historia treningów</h1>
+      </header>
+
+      <div class="filters">
+        <div class="filter-group">
+          <label for="date-from">Od:</label>
+          <input type="date" id="date-from" />
+        </div>
+        <div class="filter-group">
+          <label for="date-to">Do:</label>
+          <input type="date" id="date-to" />
+        </div>
+        <div class="filter-group">
+          <label for="sort-order">Sortuj:</label>
+          <select id="sort-order">
+            <option value="desc">Najnowsze</option>
+            <option value="asc">Najstarsze</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-small" id="clear-filters">
+          Wyczyść filtry
+        </button>
+      </div>
+
+      <div class="sessions-list" id="sessions-list">
+        <div class="loading">Ładowanie...</div>
+      </div>
+
+      <div class="empty-state" id="empty-state" style="display: none">
+        <div class="empty-icon">📋</div>
+        <p>Brak zapisanych treningów</p>
+        <a href="/" class="btn btn-primary">Rozpocznij trening</a>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="detail-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>📊 Szczegóły treningu</h2>
+          <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <div class="modal-content" id="modal-content"></div>
+        <div class="modal-footer">
+          <button class="btn btn-danger" id="delete-btn">
+            🗑️ Usuń trening
+          </button>
+          <button class="btn btn-secondary" id="close-detail-btn">
+            Zamknij
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="static/history.js"></script>
+  </body>
+</html>

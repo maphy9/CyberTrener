@@ -64,6 +64,7 @@ class OverheadPressController:
                 result['valid'] = True
                 result['right_reps'] = self.valid_reps
             else:
+                result['error_type'] = error_code
                 result['error_message'] = ERROR_MESSAGES.get(error_code, '')
                 result['error_parts'] = error_parts
         

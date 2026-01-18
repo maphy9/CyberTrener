@@ -59,6 +59,7 @@ class SessionState:
     neutral_frames: int = 0
     total_errors: int = 0
     exercise_stats: Dict = field(default_factory=dict)
+    error_details: Dict = field(default_factory=dict)
 
 
 EXERCISE_NAMES = {
@@ -79,6 +80,7 @@ class TrainingSessionController:
         
         for ex in settings.exercises:
             self.state.exercise_stats[ex] = {"reps": 0, "errors": 0}
+            self.state.error_details[ex] = {}
         
         if not force_calibration:
             self.calibration_data = CalibrationData.load()
@@ -156,6 +158,12 @@ class TrainingSessionController:
             exercise_type = self.get_current_exercise_type()
             if exercise_type in self.state.exercise_stats:
                 self.state.exercise_stats[exercise_type]["errors"] += 1
+            
+            error_type = metrics.get("error_type")
+            if error_type and exercise_type in self.state.error_details:
+                if error_type not in self.state.error_details[exercise_type]:
+                    self.state.error_details[exercise_type][error_type] = 0
+                self.state.error_details[exercise_type][error_type] += 1
         
         return metrics
     
@@ -313,6 +321,28 @@ class TrainingSessionController:
             "exerciseStats": {
                 EXERCISE_NAMES.get(ex, ex): stats 
                 for ex, stats in self.state.exercise_stats.items()
+            },
+            "errorDetails": self.state.error_details
+        }
+    
+    def get_detailed_results(self) -> Dict:
+        return {
+            "total_reps": sum(stats["reps"] for stats in self.state.exercise_stats.values()),
+            "total_errors": self.state.total_errors,
+            "exercise_results": [
+                {
+                    "exercise_type": ex,
+                    "exercise_name": EXERCISE_NAMES.get(ex, ex),
+                    "reps": stats["reps"],
+                    "errors": stats["errors"],
+                    "error_details": self.state.error_details.get(ex, {})
+                }
+                for ex, stats in self.state.exercise_stats.items()
+            ],
+            "settings": {
+                "exercises": self.settings.exercises,
+                "reps_per_exercise": self.settings.reps_per_exercise,
+                "rounds": self.settings.rounds
             }
         }
 

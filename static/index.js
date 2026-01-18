@@ -1,6 +1,7 @@
 // DOM Elements
 const startTrainingBtn = document.getElementById("start-training-btn");
 const settingsBtn = document.getElementById("settings-btn");
+const historyBtn = document.getElementById("history-btn");
 const settingsModal = document.getElementById("settings-modal");
 const modalClose = document.getElementById("modal-close");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
@@ -328,6 +329,10 @@ startTrainingBtn.addEventListener("click", () => {
     localStorage.setItem("sessionMode", "unified");
     window.location.href = "/training";
   }
+});
+
+historyBtn.addEventListener("click", () => {
+  window.location.href = "/history";
 });
 
 settingsBtn.addEventListener("click", openModal);
