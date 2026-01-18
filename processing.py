@@ -148,8 +148,15 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event, a
     
     socketio.emit('status', {'state': 'waiting'})
     
+
     calibration_data = CalibrationData.load()
-    exercise = BicepCurlController(calibration_data)
+    import os
+    exercise_type = os.environ.get('EXERCISE_TYPE', 'bicep_curl')
+    if exercise_type == 'overhead_press':
+        from exercises.overhead_press.controller import OverheadPressController
+        exercise = OverheadPressController()
+    else:
+        exercise = BicepCurlController(calibration_data)
     
     reset_front_view_state()
     reset_profile_view_state()

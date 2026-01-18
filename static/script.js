@@ -1,3 +1,13 @@
+// Set exercise name dynamically
+const exerciseNameSpan = document.getElementById("exercise-name");
+const exerciseType = localStorage.getItem("exerciseType") || "bicep_curl";
+if (exerciseNameSpan) {
+  if (exerciseType === "overhead_press") {
+    exerciseNameSpan.textContent = "Overhead Press";
+  } else {
+    exerciseNameSpan.textContent = "Naprzemienne uginanie przedramion z hantlami";
+  }
+}
 let timerInterval;
 let seconds = 0;
 let timerStarted = false;
