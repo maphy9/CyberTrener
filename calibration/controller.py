@@ -94,7 +94,7 @@ class CalibrationController:
                 self.measurements['neutral_trunk'] = mean_value
                 self.measurement_buffer.clear()
                 self.current_step = 'right_flex'
-                return True, "Dobrze! Teraz ugnij prawą rękę"
+                return True, "Teraz ugnij prawą rękę"
         
         elif self.current_step == 'right_flex':
             right_angle = front_metrics.get('right_angle')
@@ -108,7 +108,7 @@ class CalibrationController:
                     self.measurements['right_verticality'] = right_vert
                     self.measurement_buffer.clear()
                     self.current_step = 'right_extend'
-                    return True, "Świetnie! Teraz wyprostuj prawą rękę"
+                    return True, "Teraz wyprostuj prawą rękę"
         
         elif self.current_step == 'right_extend':
             right_angle = front_metrics.get('right_angle')
@@ -120,7 +120,7 @@ class CalibrationController:
                     self.measurements['right_extend_angle'] = mean_value
                     self.measurement_buffer.clear()
                     self.current_step = 'left_flex'
-                    return True, "Doskonale! Teraz ugnij lewą rękę"
+                    return True, "Teraz ugnij lewą rękę"
         
         elif self.current_step == 'left_flex':
             left_angle = front_metrics.get('left_angle')
@@ -134,7 +134,7 @@ class CalibrationController:
                     self.measurements['left_verticality'] = left_vert
                     self.measurement_buffer.clear()
                     self.current_step = 'left_extend'
-                    return True, "Rewelacja! Teraz wyprostuj lewą rękę"
+                    return True, "Teraz wyprostuj lewą rękę"
         
         elif self.current_step == 'left_extend':
             left_angle = front_metrics.get('left_angle')

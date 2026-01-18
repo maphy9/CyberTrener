@@ -3,7 +3,7 @@ const trainingSettings = JSON.parse(
   localStorage.getItem("trainingSettings"),
 ) || {
   exercises: ["bicep_curl", "overhead_press"],
-  repsPerSet: 10,
+  repsPerExercise: { bicep_curl: 10, overhead_press: 10 },
   rounds: 3,
   cameraSettings: {
     front: { type: "physical", value: 0 },
@@ -20,26 +20,26 @@ const EXERCISE_NAMES = {
   overhead_press: "Wyciskanie nad głowę",
 };
 
-// Set initial exercise name
+// Set initial UI state - show calibration/connect prompt
 const exerciseNameSpan = document.getElementById("exercise-name");
 const roundInfo = document.getElementById("round-info");
 const roundText = document.getElementById("round-text");
 
-// Update initial display
+// Initial state: Show calibration prompt, hide exercise-specific info
 if (exerciseNameSpan) {
-  const firstExercise = trainingSettings.exercises[0] || "bicep_curl";
-  exerciseNameSpan.textContent = EXERCISE_NAMES[firstExercise] || firstExercise;
+  exerciseNameSpan.textContent = "Kalibracja";
 }
 if (roundText) {
-  roundText.textContent = `Runda 1/${trainingSettings.rounds}`;
+  roundText.textContent = "Kliknij POŁĄCZ";
 }
 
-// Update target reps display
+// Hide stats box initially (will be shown after calibration)
 const targetRepsSpan = document.getElementById("target-reps");
 const targetRepsLeftSpan = document.getElementById("target-reps-left");
-if (targetRepsSpan) targetRepsSpan.textContent = trainingSettings.repsPerSet;
-if (targetRepsLeftSpan)
-  targetRepsLeftSpan.textContent = trainingSettings.repsPerSet;
+const statsBoxInit = document.getElementById("stats-box");
+if (statsBoxInit) {
+  statsBoxInit.style.display = "none";
+}
 
 let timerInterval;
 let seconds = 0;
@@ -74,8 +74,6 @@ const calibrationInstruction = document.getElementById(
 const calibrationProgress = document.getElementById("calibration-progress");
 const statsBox = document.getElementById("stats-box");
 const completeBox = document.getElementById("complete-box");
-const exerciseProgressSpan = document.getElementById("exercise-progress");
-const totalExercisesSpan = document.getElementById("total-exercises");
 const statRightRow = document.getElementById("stat-right-row");
 const statLeftRow = document.getElementById("stat-left-row");
 
@@ -331,22 +329,12 @@ socket.on("training-state", (data) => {
     roundText.textContent = `Runda ${data.currentRound}/${data.totalRounds}`;
   }
 
-  // Update exercise progress
-  if (exerciseProgressSpan) {
-    exerciseProgressSpan.textContent = (data.exerciseIndex || 0) + 1;
-  }
-  if (totalExercisesSpan) {
-    totalExercisesSpan.textContent =
-      data.totalExercises || trainingSettings.exercises.length;
-  }
-
   // Update target reps
   if (targetRepsSpan) {
-    targetRepsSpan.textContent = data.targetReps || trainingSettings.repsPerSet;
+    targetRepsSpan.textContent = data.targetReps || 10;
   }
   if (targetRepsLeftSpan) {
-    targetRepsLeftSpan.textContent =
-      data.targetReps || trainingSettings.repsPerSet;
+    targetRepsLeftSpan.textContent = data.targetReps || 10;
   }
 
   // Update exercise type display

@@ -299,6 +299,34 @@
   font-size: 0.95rem;
 }
 
+/* Exercise Reps Input */
+.exercise-reps {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.exercise-reps-input {
+  width: 55px;
+  padding: 0.4rem 0.5rem;
+  background: var(--dark);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.exercise-reps-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.reps-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 /* Toggle Switch */
 .exercise-toggle {
   position: relative;

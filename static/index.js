@@ -17,14 +17,16 @@ const profilePhysicalInput = document.getElementById("profile-physical-input");
 const profileIpInput = document.getElementById("profile-ip-input");
 
 // Training settings inputs
-const repsPerSetInput = document.getElementById("reps-per-set");
 const roundsInput = document.getElementById("rounds");
 const exerciseList = document.getElementById("exercise-list");
 
 // Default settings
 const DEFAULT_SETTINGS = {
   exercises: ["bicep_curl", "overhead_press"],
-  repsPerSet: 10,
+  repsPerExercise: {
+    bicep_curl: 10,
+    overhead_press: 10,
+  },
   rounds: 3,
   cameraSettings: {
     front: { type: "physical", value: 0 },
@@ -56,10 +58,18 @@ function getSettingsFromUI() {
   // Get exercise order and enabled state
   const exerciseItems = exerciseList.querySelectorAll(".exercise-item");
   const exercises = [];
+  const repsPerExercise = {};
+
   exerciseItems.forEach((item) => {
     const checkbox = item.querySelector('input[type="checkbox"]');
+    const repsInput = item.querySelector(".exercise-reps-input");
+    const exerciseId = item.dataset.exercise;
+
     if (checkbox && checkbox.checked) {
-      exercises.push(item.dataset.exercise);
+      exercises.push(exerciseId);
+    }
+    if (repsInput) {
+      repsPerExercise[exerciseId] = parseInt(repsInput.value) || 10;
     }
   });
 
@@ -86,7 +96,7 @@ function getSettingsFromUI() {
 
   return {
     exercises: exercises,
-    repsPerSet: parseInt(repsPerSetInput.value) || 10,
+    repsPerExercise: repsPerExercise,
     rounds: parseInt(roundsInput.value) || 3,
     cameraSettings: {
       front: { type: frontType, value: frontValue },
@@ -99,7 +109,6 @@ function getSettingsFromUI() {
 // Apply settings to UI
 function applySettingsToUI(settings) {
   // Training params
-  repsPerSetInput.value = settings.repsPerSet;
   roundsInput.value = settings.rounds;
 
   // Exercise order and enabled state
@@ -115,11 +124,18 @@ function applySettingsToUI(settings) {
     }
   });
 
-  // Set checkbox states
+  // Set checkbox states and per-exercise reps
+  const repsPerExercise = settings.repsPerExercise || {};
   exerciseList.querySelectorAll(".exercise-item").forEach((item) => {
     const checkbox = item.querySelector('input[type="checkbox"]');
+    const repsInput = item.querySelector(".exercise-reps-input");
+    const exerciseId = item.dataset.exercise;
+
     if (checkbox) {
-      checkbox.checked = settings.exercises.includes(item.dataset.exercise);
+      checkbox.checked = settings.exercises.includes(exerciseId);
+    }
+    if (repsInput) {
+      repsInput.value = repsPerExercise[exerciseId] || 10;
     }
   });
 

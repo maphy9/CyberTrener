@@ -296,7 +296,8 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
     
     # Check if calibration is needed
     calibration_data = CalibrationData.load()
-    needs_calibration = force_calibration or not (calibration_data and calibration_data.calibrated)
+    # Always calibrate at the start of a training session for consistent UX
+    needs_calibration = True
     
     # Voice command callback for exercise navigation
     exercise_command_lock = Lock()
@@ -365,7 +366,7 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
                         calibration_data = calibration.get_calibration_data()
                         calibration_data.save()
                         
-                        audio_handler.queue_speech_priority("Kalibracja zakończona. Przechodzimy do treningu.")
+                        audio_handler.queue_speech_priority("Kalibracja zakończona. Zaczynamy trening.")
                         
                         socketio.emit('calibration-complete', {
                             'data': calibration_data.to_dict()
@@ -464,7 +465,7 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
         
         # Check if training is complete
         if session.is_complete():
-            audio_handler.queue_speech_priority("Trening zakończony. Świetna robota!")
+            audio_handler.queue_speech_priority("Trening zakończony.")
             socketio.emit('training-complete', {
                 'totalRightReps': session.state.total_right_reps,
                 'totalLeftReps': session.state.total_left_reps
@@ -575,7 +576,7 @@ def _handle_exercise_transition(socketio, audio_handler, session, event_result, 
         round_num = event_result['round']
         total = event_result['total_rounds']
         exercise = event_result['exercise']
-        audio_handler.queue_speech_priority(f"Świetnie! Runda {round_num} z {total}. {exercise}.")
+        audio_handler.queue_speech_priority(f"Runda {round_num} z {total}. {exercise}.")
         
     elif event == 'new_exercise':
         exercise = event_result['exercise']

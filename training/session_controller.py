@@ -21,16 +21,29 @@ class SessionPhase(Enum):
 class TrainingSettings:
     """Settings for a training session, loaded from frontend localStorage."""
     exercises: List[str] = field(default_factory=lambda: ["bicep_curl", "overhead_press"])
-    reps_per_set: int = 10
+    reps_per_exercise: Dict[str, int] = field(default_factory=lambda: {"bicep_curl": 10, "overhead_press": 10})
     rounds: int = 3
     
     @classmethod
     def from_dict(cls, data: dict) -> "TrainingSettings":
+        exercises = data.get("exercises", ["bicep_curl", "overhead_press"])
+        
+        # Support both old format (single repsPerSet) and new format (repsPerExercise dict)
+        reps_data = data.get("repsPerExercise", {})
+        if not reps_data:
+            # Fallback to old single value for all exercises
+            default_reps = data.get("repsPerSet", 10)
+            reps_data = {ex: default_reps for ex in exercises}
+        
         return cls(
-            exercises=data.get("exercises", ["bicep_curl", "overhead_press"]),
-            reps_per_set=data.get("repsPerSet", 10),
+            exercises=exercises,
+            reps_per_exercise=reps_data,
             rounds=data.get("rounds", 3)
         )
+    
+    def get_reps_for_exercise(self, exercise_type: str) -> int:
+        """Get the target reps for a specific exercise."""
+        return self.reps_per_exercise.get(exercise_type, 10)
 
 
 @dataclass  
@@ -139,15 +152,15 @@ class TrainingSessionController:
     
     def check_set_complete(self) -> bool:
         """Check if the current set (target reps) is complete."""
-        # For exercises like overhead press, only check right_reps (which is total)
         exercise_type = self.get_current_exercise_type()
+        target_reps = self.settings.get_reps_for_exercise(exercise_type)
         
         if exercise_type == "overhead_press":
-            return self.state.right_reps >= self.settings.reps_per_set
+            return self.state.right_reps >= target_reps
         else:
-            # For bicep curl, check if both arms completed OR average
-            return (self.state.right_reps >= self.settings.reps_per_set and 
-                    self.state.left_reps >= self.settings.reps_per_set)
+            # For bicep curl, check if both arms completed
+            return (self.state.right_reps >= target_reps and 
+                    self.state.left_reps >= target_reps)
     
     def advance_to_next(self) -> Dict:
         """
@@ -222,15 +235,16 @@ class TrainingSessionController:
     
     def get_state_dict(self) -> Dict:
         """Get current state as a dictionary for socket emission."""
+        exercise_type = self.get_current_exercise_type()
         return {
             "phase": self.state.phase.value,
             "currentExercise": self.get_current_exercise_name(),
-            "currentExerciseType": self.get_current_exercise_type(),
+            "currentExerciseType": exercise_type,
             "exerciseIndex": self.state.current_exercise_index,
             "totalExercises": len(self.settings.exercises),
             "currentRound": self.state.current_round,
             "totalRounds": self.settings.rounds,
-            "targetReps": self.settings.reps_per_set,
+            "targetReps": self.settings.get_reps_for_exercise(exercise_type),
             "rightReps": self.state.right_reps,
             "leftReps": self.state.left_reps
         }
@@ -238,9 +252,10 @@ class TrainingSessionController:
     def get_announcement_for_start(self) -> str:
         """Get the announcement text when starting current exercise."""
         exercise = self.get_current_exercise_name()
+        exercise_type = self.get_current_exercise_type()
         round_num = self.state.current_round
         total_rounds = self.settings.rounds
-        target = self.settings.reps_per_set
+        target = self.settings.get_reps_for_exercise(exercise_type)
         
         return f"Runda {round_num} z {total_rounds}. {exercise}. {target} powtórzeń."
     

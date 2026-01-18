@@ -42,17 +42,6 @@
             <h3>📊 Parametry treningu</h3>
 
             <div class="setting-row">
-              <label for="reps-per-set">Powtórzenia na serię:</label>
-              <input
-                type="number"
-                id="reps-per-set"
-                value="10"
-                min="1"
-                max="50"
-              />
-            </div>
-
-            <div class="setting-row">
               <label for="rounds">Liczba rund (podejść):</label>
               <input type="number" id="rounds" value="3" min="1" max="10" />
             </div>
@@ -61,7 +50,10 @@
           <!-- Exercise Order Section -->
           <div class="settings-section">
             <h3>📝 Kolejność ćwiczeń</h3>
-            <p class="settings-hint">Przeciągnij aby zmienić kolejność</p>
+            <p class="settings-hint">
+              Przeciągnij aby zmienić kolejność. Ustaw powtórzenia dla każdego
+              ćwiczenia.
+            </p>
 
             <ul class="exercise-list" id="exercise-list">
               <li
@@ -70,9 +62,17 @@
                 draggable="true"
               >
                 <span class="drag-handle">⋮⋮</span>
-                <span class="exercise-name"
-                  >Uginanie przedramion (Bicep Curl)</span
-                >
+                <span class="exercise-name">Uginanie przedramion</span>
+                <div class="exercise-reps">
+                  <input
+                    type="number"
+                    class="exercise-reps-input"
+                    value="10"
+                    min="1"
+                    max="50"
+                  />
+                  <span class="reps-label">powt.</span>
+                </div>
                 <label class="exercise-toggle">
                   <input type="checkbox" checked data-exercise="bicep_curl" />
                   <span class="toggle-slider"></span>
@@ -84,9 +84,17 @@
                 draggable="true"
               >
                 <span class="drag-handle">⋮⋮</span>
-                <span class="exercise-name"
-                  >Wyciskanie nad głowę (Overhead Press)</span
-                >
+                <span class="exercise-name">Wyciskanie nad głowę</span>
+                <div class="exercise-reps">
+                  <input
+                    type="number"
+                    class="exercise-reps-input"
+                    value="10"
+                    min="1"
+                    max="50"
+                  />
+                  <span class="reps-label">powt.</span>
+                </div>
                 <label class="exercise-toggle">
                   <input
                     type="checkbox"
