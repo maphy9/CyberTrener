@@ -23,6 +23,9 @@ CALIBRATION_PHRASES = [
     "Teraz wyprostuj prawą rękę",
     "Teraz ugnij lewą rękę",
     "Teraz wyprostuj lewą rękę",
+    # Overhead press calibration
+    "Teraz podnieś obie ręce na wysokość barków",
+    "Teraz wyciśnij ręce maksymalnie nad głowę",
     "Kalibracja zakończona",
     "Kalibracja zakończona. Zaczynamy trening."
 ]
@@ -46,7 +49,13 @@ TRAINING_PHRASES = [
     "Trzymaj plecy prosto",
     "Trzymaj rękę pionowo",
     "Nie pracuj obiema rękami jednocześnie",
-    "Zmieniaj ręce naprzemiennie"
+    "Zmieniaj ręce naprzemiennie",
+    # Overhead press specific
+    "Unoś obie ręce równomiernie",
+    "Trzymaj łokcie do przodu",
+    "Wyprostuj ręce całkowicie na górze",
+    "Nie wyginaj pleców do tyłu",
+    "Zacznij z rąk na wysokości barków",
 ]
 
 
@@ -176,14 +185,16 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event, a
     
     socketio.emit('status', {'state': 'waiting'})
     
+    # Load calibration data for both exercises
+    calibration_data = CalibrationData.load()
+    
     if exercise_type == 'overhead_press':
         print("Initializing Overhead Press exercise")
-        exercise = OverheadPressController()
+        exercise = OverheadPressController(calibration_data)
         reset_overhead_front()
         reset_overhead_profile()
     else:
         print("Initializing Bicep Curl exercise")
-        calibration_data = CalibrationData.load()
         exercise = BicepCurlController(calibration_data)
         reset_bicep_front()
         reset_bicep_profile()

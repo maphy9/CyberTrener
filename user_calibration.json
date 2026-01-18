@@ -1,11 +1,17 @@
 {
-  "neutral_trunk_angle": 167.87500000000003,
-  "right_min_angle": 27.127777777777776,
-  "right_max_angle": 167.35263157894738,
-  "left_min_angle": 18.789473684210527,
-  "left_max_angle": 168.59473684210525,
+  "neutral_trunk_angle": 169.82000000000002,
+  "right_min_angle": 17.184210526315788,
+  "right_max_angle": 168.48947368421054,
+  "left_min_angle": 17.4,
+  "left_max_angle": 166.78947368421052,
   "vertical_tolerance": 20,
-  "trunk_tolerance": 22.12499999999997,
+  "trunk_tolerance": 20.17999999999998,
+  "overhead_start_angle": 112.63684210526317,
+  "overhead_top_angle": 159.92631578947368,
+  "overhead_start_wrist_y": 0.385,
+  "overhead_top_wrist_y": 0.16649999999999998,
+  "overhead_arm_sync_tolerance": 19.1,
+  "overhead_trunk_tolerance": 19.900000000000006,
   "calibrated": true,
-  "calibration_date": "2026-01-18T18:24:34.876777"
+  "calibration_date": "2026-01-18T21:33:57.936619"
 }

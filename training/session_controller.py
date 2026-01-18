@@ -107,7 +107,7 @@ class TrainingSessionController:
         if exercise_type == "bicep_curl":
             self.current_exercise_controller = BicepCurlController(self.calibration_data)
         elif exercise_type == "overhead_press":
-            self.current_exercise_controller = OverheadPressController()
+            self.current_exercise_controller = OverheadPressController(self.calibration_data)
         else:
             self.current_exercise_controller = BicepCurlController(self.calibration_data)
         
