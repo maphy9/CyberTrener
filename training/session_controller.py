@@ -300,7 +300,7 @@ class TrainingSessionController:
         total_rounds = self.settings.rounds
         target = self.settings.get_reps_for_exercise(exercise_type)
         
-        return f"Runda {round_num} z {total_rounds}. {exercise}. {target} powtórzeń."
+        return f"Runda {round_num}. {exercise}. {target} powtórzeń."
     
     def is_complete(self) -> bool:
         return self.state.phase == SessionPhase.COMPLETED

@@ -83,6 +83,8 @@ const STEP_NAMES = {
   right_extend: "Prawa ręka - wyprost",
   left_flex: "Lewa ręka - zgięcie",
   left_extend: "Lewa ręka - wyprost",
+  overhead_start: "Wyciskanie - start",
+  overhead_top: "Wyciskanie - góra",
   complete: "Zakończono",
 };
 
@@ -92,6 +94,8 @@ const STEP_ORDER = [
   "right_extend",
   "left_flex",
   "left_extend",
+  "overhead_start",
+  "overhead_top",
 ];
 
 function showCalibrationUI() {

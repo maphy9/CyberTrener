@@ -23,9 +23,8 @@ CALIBRATION_PHRASES = [
     "Teraz wyprostuj prawą rękę",
     "Teraz ugnij lewą rękę",
     "Teraz wyprostuj lewą rękę",
-    # Overhead press calibration
-    "Teraz podnieś obie ręce na wysokość barków",
-    "Teraz wyciśnij ręce maksymalnie nad głowę",
+    "Podnieś obie ręce na wysokość barków",
+    "Wyciśnij ręce nad głowę",
     "Kalibracja zakończona",
     "Kalibracja zakończona. Zaczynamy trening."
 ]
@@ -36,27 +35,21 @@ TRAINING_PHRASES = [
     "Pauza",
     "Następne ćwiczenie",
     "Wracamy",
-    "Runda 1 z 3",
-    "Runda 2 z 3",
-    "Runda 3 z 3",
     "Uginanie przedramion",
     "Wyciskanie nad głowę",
     "Trening zakończony",
-    "10 powtórzeń",
-    "5 powtórzeń",
-    "15 powtórzeń",
-    "20 powtórzeń",
     "Trzymaj plecy prosto",
     "Trzymaj rękę pionowo",
     "Nie pracuj obiema rękami jednocześnie",
     "Zmieniaj ręce naprzemiennie",
-    # Overhead press specific
     "Unoś obie ręce równomiernie",
-    "Trzymaj łokcie do przodu",
-    "Wyprostuj ręce całkowicie na górze",
-    "Nie wyginaj pleców do tyłu",
-    "Zacznij z rąk na wysokości barków",
 ]
+
+for i in range(1, 11):
+    TRAINING_PHRASES.append(f"Runda {i}")
+
+for reps in [5, 10, 12, 15, 20, 25, 30]:
+    TRAINING_PHRASES.append(f"{reps} powtórzeń")
 
 
 def run_calibration_session(socketio, front_stream, profile_stream, stop_event):

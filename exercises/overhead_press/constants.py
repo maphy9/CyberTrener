@@ -29,8 +29,8 @@ ACTIVE_ZONE_WRIST_Y_MIN = 0.1   # Minimum Y position (very top of frame)
 SHOULDER_Y_OFFSET = 0.05  # Wrists should be at or above (shoulder_y - offset) to count
 
 # Rep counting direction
-# For overhead press: rep is counted when reaching the TOP (extended) position
-REP_COUNT_AT_TOP = True
+# For overhead press: rep is counted when RETURNING to start position (flexed/90°)
+REP_COUNT_AT_TOP = False
 
 # Movement start detection
 # User must start with arms in starting position (at shoulder level) before counting begins

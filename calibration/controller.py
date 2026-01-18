@@ -72,9 +72,8 @@ class CalibrationController:
             'right_extend': 'Wyprostuj prawą rękę całkowicie',
             'left_flex': 'Ugnij lewą rękę maksymalnie do góry',
             'left_extend': 'Wyprostuj lewą rękę całkowicie',
-            # Overhead press calibration steps
-            'overhead_start': 'Podnieś obie ręce na wysokość barków - pozycja startowa wyciskania',
-            'overhead_top': 'Wyciśnij obie ręce maksymalnie nad głowę',
+            'overhead_start': 'Podnieś obie ręce na wysokość barków',
+            'overhead_top': 'Wyciśnij ręce nad głowę',
             'complete': 'Kalibracja zakończona!'
         }
         return instructions.get(self.current_step, '')

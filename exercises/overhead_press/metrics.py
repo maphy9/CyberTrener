@@ -77,68 +77,24 @@ def reset_profile_view_state():
 
 
 def _check_in_active_zone(right_wrist_y, left_wrist_y, right_shoulder_y, left_shoulder_y, avg_angle, calibration=None):
-    """
-    Check if wrists are in the active exercise zone.
-    Active zone = wrists are at or above shoulder level.
-    
-    Returns:
-        tuple: (in_active_zone, in_start_position)
-    """
     global _active_zone_state
-    
-    # Get calibration values or use defaults
-    if calibration:
-        start_wrist_y = calibration.overhead_start_wrist_y
-        top_wrist_y = calibration.overhead_top_wrist_y
-        start_angle_min = calibration.overhead_start_angle - 20
-        start_angle_max = calibration.overhead_start_angle + 20
-    else:
-        start_wrist_y = ACTIVE_ZONE_WRIST_Y_MAX
-        top_wrist_y = ACTIVE_ZONE_WRIST_Y_MIN
-        start_angle_min = START_POSITION_MIN_ANGLE
-        start_angle_max = START_POSITION_MAX_ANGLE
     
     avg_wrist_y = (right_wrist_y + left_wrist_y) / 2
     avg_shoulder_y = (right_shoulder_y + left_shoulder_y) / 2
     
-    # Active zone: wrists are above shoulders (lower Y value means higher on screen)
-    # Add small margin (SHOULDER_Y_OFFSET) to account for natural variation
     wrists_above_shoulders = avg_wrist_y < (avg_shoulder_y + SHOULDER_Y_OFFSET)
     
-    # Start position check: arms at roughly shoulder level with bent elbows
-    in_start_position = (
-        wrists_above_shoulders and
-        start_angle_min <= avg_angle <= start_angle_max
-    )
+    in_start_position = wrists_above_shoulders and avg_angle < 120
     
-    # Track frames in start position
-    if in_start_position:
-        _active_zone_state['frames_in_start_position'] += 1
-    else:
-        _active_zone_state['frames_in_start_position'] = max(0, _active_zone_state['frames_in_start_position'] - 1)
-    
-    # User has entered start position if they held it for enough frames
-    if _active_zone_state['frames_in_start_position'] >= STABILITY_FRAMES:
-        _active_zone_state['entered_start_position'] = True
-    
-    # Active zone is when:
-    # 1. User has entered the start position at least once
-    # 2. Wrists are currently above shoulder level
-    in_active_zone = _active_zone_state['entered_start_position'] and wrists_above_shoulders
-    
-    # Track frames in active zone
-    if in_active_zone:
+    if wrists_above_shoulders:
         _active_zone_state['frames_in_active_zone'] += 1
+        if _active_zone_state['frames_in_active_zone'] >= STABILITY_FRAMES:
+            _active_zone_state['in_active_zone'] = True
     else:
         _active_zone_state['frames_in_active_zone'] = 0
-        # If wrists drop below shoulders for too long, reset start position requirement
-        if not wrists_above_shoulders:
-            _active_zone_state['entered_start_position'] = False
-            _active_zone_state['frames_in_start_position'] = 0
+        _active_zone_state['in_active_zone'] = False
     
-    _active_zone_state['in_active_zone'] = in_active_zone
-    
-    return in_active_zone, in_start_position
+    return _active_zone_state['in_active_zone'], in_start_position
 
 
 def calculate_front_view(results, history, calibration=None):
@@ -193,32 +149,18 @@ def calculate_front_view(results, history, calibration=None):
     # Phase detection based on average angle
     phase = _front_phase_detector.update(avg_angle)
     
-    # Rep counting - ONLY if in active zone
+    # Rep counting - only when wrists are above shoulders
     reps = prev.get('reps', 0)
     rep_flag = prev.get('rep_flag', False)
     
     if in_active_zone:
-        # Count rep when reaching EXTENDED (top) position
-        if REP_COUNT_AT_TOP:
-            # Rep flag set when returning to flexed (start) position
-            if phase == 'flexed' and _front_phase_detector.is_stable(STABILITY_FRAMES):
-                rep_flag = True
-            # Rep counted when reaching extended (top) position
-            elif phase == 'extended' and rep_flag and _front_phase_detector.is_stable(STABILITY_FRAMES):
-                reps += 1
-                rep_flag = False
-        else:
-            # Original logic: count at bottom
-            if phase == 'extended' and _front_phase_detector.is_stable(STABILITY_FRAMES):
-                rep_flag = True
-            elif phase == 'flexed' and rep_flag and _front_phase_detector.is_stable(STABILITY_FRAMES):
-                reps += 1
-                rep_flag = False
-    else:
-        # Not in active zone - don't count, but preserve rep flag state
-        # Reset rep flag if user exits active zone to prevent counting partial reps
-        if not in_active_zone and prev.get('in_active_zone', False):
+        if phase == 'extended' and _front_phase_detector.is_stable(STABILITY_FRAMES):
+            rep_flag = True
+        elif phase == 'flexed' and rep_flag and _front_phase_detector.is_stable(STABILITY_FRAMES):
+            reps += 1
             rep_flag = False
+    else:
+        rep_flag = False
     
     return {
         'right_angle': round(right_angle_smooth or 0, 1),
