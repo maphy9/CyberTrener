@@ -35,7 +35,7 @@ class OverheadPressController:
         front_metrics = self.front_analyzer.get_metrics()
         profile_metrics = self.profile_analyzer.get_metrics()
         
-        in_active_zone = front_metrics.get('in_active_zone', False)
+        self.validator.track_movement(front_metrics, profile_metrics)
         
         analyzer_reps = front_metrics.get('reps', 0)
         

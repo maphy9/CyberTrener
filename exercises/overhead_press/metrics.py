@@ -132,12 +132,13 @@ def calculate_front_view(results, history, calibration=None):
     # Use average angle for synchronized movement
     avg_angle = (right_angle_smooth + left_angle_smooth) / 2
     
-    # Calculate arm synchronization
-    arm_sync_diff = abs(right_angle_smooth - left_angle_smooth)
-    
     # Get and smooth wrist Y positions
     right_wrist_y_smooth = _front_smoothers['right_wrist_y'].update(right_wrist[1])
     left_wrist_y_smooth = _front_smoothers['left_wrist_y'].update(left_wrist[1])
+    
+    # Calculate arm synchronization (both angle and position)
+    arm_sync_diff = abs(right_angle_smooth - left_angle_smooth)
+    wrist_y_diff = abs(right_wrist_y_smooth - left_wrist_y_smooth)
     
     # Check active zone
     in_active_zone, in_start_position = _check_in_active_zone(
@@ -167,6 +168,7 @@ def calculate_front_view(results, history, calibration=None):
         'left_angle': round(left_angle_smooth or 0, 1),
         'avg_angle': round(avg_angle or 0, 1),
         'arm_sync_diff': round(arm_sync_diff or 0, 1),
+        'wrist_y_diff': round(wrist_y_diff or 0, 3),
         'reps': reps,
         'phase': phase,
         'rep_flag': rep_flag,
