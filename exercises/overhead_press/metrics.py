@@ -15,7 +15,7 @@ FRONT_REQUIRED_LANDMARKS = [
     POSE_RIGHT_ELBOW, POSE_LEFT_ELBOW,
     POSE_RIGHT_WRIST, POSE_LEFT_WRIST,
     POSE_RIGHT_HIP, POSE_LEFT_HIP,
-    POSE_NOSE  # For head position reference
+    POSE_NOSE
 ]
 
 PROFILE_REQUIRED_LANDMARKS = [
@@ -48,7 +48,6 @@ _profile_phase_detector = PhaseDetector(
     hysteresis=15
 )
 
-# State tracking for active zone
 _active_zone_state = {
     'in_active_zone': False,
     'entered_start_position': False,
@@ -58,6 +57,7 @@ _active_zone_state = {
 
 
 def reset_front_view_state():
+    """Resetuje stan filtrów i strefy aktywnej (przód)."""
     global _active_zone_state
     for smoother in _front_smoothers.values():
         smoother.reset()
@@ -71,12 +71,14 @@ def reset_front_view_state():
 
 
 def reset_profile_view_state():
+    """Resetuje stan filtrów i detektora (profil)."""
     for smoother in _profile_smoothers.values():
         smoother.reset()
     _profile_phase_detector.reset()
 
 
 def _check_in_active_zone(right_wrist_y, left_wrist_y, right_shoulder_y, left_shoulder_y, avg_angle, calibration=None):
+    """Sprawdza wejście do aktywnej strefy ruchu."""
     global _active_zone_state
     
     avg_wrist_y = (right_wrist_y + left_wrist_y) / 2
@@ -98,11 +100,11 @@ def _check_in_active_zone(right_wrist_y, left_wrist_y, right_shoulder_y, left_sh
 
 
 def calculate_front_view(results, history, calibration=None):
+    """Liczy metryki z widoku przodu dla OHP."""
     landmarks = extract_pose_landmarks(results)
     if not landmarks:
         return None
     
-    # Check basic landmarks (allow missing nose)
     basic_landmarks = [
         POSE_RIGHT_SHOULDER, POSE_LEFT_SHOULDER,
         POSE_RIGHT_ELBOW, POSE_LEFT_ELBOW,
@@ -122,35 +124,28 @@ def calculate_front_view(results, history, calibration=None):
     right_wrist = landmarks[POSE_RIGHT_WRIST]
     left_wrist = landmarks[POSE_LEFT_WRIST]
 
-    # Calculate angles for both arms
     right_angle_raw = calculate_angle(right_shoulder, right_elbow, right_wrist)
     left_angle_raw = calculate_angle(left_shoulder, left_elbow, left_wrist)
     
     right_angle_smooth = _front_smoothers['right_angle'].update(right_angle_raw)
     left_angle_smooth = _front_smoothers['left_angle'].update(left_angle_raw)
     
-    # Use average angle for synchronized movement
     avg_angle = (right_angle_smooth + left_angle_smooth) / 2
     
-    # Get and smooth wrist Y positions
     right_wrist_y_smooth = _front_smoothers['right_wrist_y'].update(right_wrist[1])
     left_wrist_y_smooth = _front_smoothers['left_wrist_y'].update(left_wrist[1])
     
-    # Calculate arm synchronization (both angle and position)
     arm_sync_diff = abs(right_angle_smooth - left_angle_smooth)
     wrist_y_diff = abs(right_wrist_y_smooth - left_wrist_y_smooth)
     
-    # Check active zone
     in_active_zone, in_start_position = _check_in_active_zone(
         right_wrist_y_smooth, left_wrist_y_smooth,
         right_shoulder[1], left_shoulder[1],
         avg_angle, calibration
     )
     
-    # Phase detection based on average angle
     phase = _front_phase_detector.update(avg_angle)
     
-    # Rep counting - only when wrists are above shoulders
     reps = prev.get('reps', 0)
     rep_flag = prev.get('rep_flag', False)
     
@@ -175,7 +170,6 @@ def calculate_front_view(results, history, calibration=None):
         'right_velocity': _front_smoothers['right_angle'].get_velocity(),
         'left_velocity': _front_smoothers['left_angle'].get_velocity(),
         'confidence': round(confidence, 2),
-        # New fields for active zone tracking
         'in_active_zone': in_active_zone,
         'in_start_position': in_start_position,
         'right_wrist_y': round(right_wrist_y_smooth, 3),
@@ -186,6 +180,7 @@ def calculate_front_view(results, history, calibration=None):
 
 
 def calculate_profile_view(results, history, calibration=None):
+    """Liczy metryki z widoku profilu dla OHP."""
     landmarks = extract_pose_landmarks(results)
     if not landmarks:
         return None
@@ -204,11 +199,9 @@ def calculate_profile_view(results, history, calibration=None):
     right_hip = landmarks[POSE_RIGHT_HIP]
     left_hip = landmarks[POSE_LEFT_HIP]
     
-    # Arm angle
     right_angle_raw = calculate_angle(right_shoulder, right_elbow, right_wrist)
     right_angle_smooth = _profile_smoothers['right_angle'].update(right_angle_raw)
     
-    # Trunk angle (body posture)
     shoulder_mid = ((right_shoulder[0] + left_shoulder[0]) / 2, 
                     (right_shoulder[1] + left_shoulder[1]) / 2)
     hip_mid = ((right_hip[0] + left_hip[0]) / 2,
@@ -217,23 +210,18 @@ def calculate_profile_view(results, history, calibration=None):
     trunk_angle_raw = calculate_trunk_angle(shoulder_mid, hip_mid)
     trunk_angle_smooth = _profile_smoothers['trunk_angle'].update(trunk_angle_raw)
     
-    # Trunk deviation from neutral (180 = straight)
     neutral_trunk = 180
     if calibration:
         neutral_trunk = calibration.neutral_trunk_angle
     trunk_deviation = abs(trunk_angle_smooth - neutral_trunk)
     
-    # Elbow forward angle (shoulder-elbow-hip) - checks if elbows flare out
     elbow_forward_angle = calculate_angle(right_shoulder, right_elbow, right_hip)
     
-    # Phase detection
     phase = _profile_phase_detector.update(right_angle_smooth)
     
-    # Rep counting (for redundancy, front view is primary)
     reps = prev.get('reps', 0)
     rep_flag = prev.get('rep_flag', False)
     
-    # Check if in active zone based on wrist Y relative to shoulder Y
     wrist_above_shoulder = right_wrist[1] < (right_shoulder[1] + SHOULDER_Y_OFFSET)
     
     if wrist_above_shoulder:
@@ -250,7 +238,6 @@ def calculate_profile_view(results, history, calibration=None):
                 reps += 1
                 rep_flag = False
     else:
-        # Reset rep flag if wrist drops below shoulder
         rep_flag = False
     
     return {

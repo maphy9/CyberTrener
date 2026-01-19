@@ -52,10 +52,8 @@ class MeasurementBuffer:
 
 class CalibrationController:
     def __init__(self):
-        # Bicep curl analyzers
         self.front_analyzer = PoseAnalyzer(calculate_front_view)
         self.profile_analyzer = PoseAnalyzer(calculate_profile_view)
-        # Overhead press analyzers
         self.overhead_front_analyzer = PoseAnalyzer(calculate_overhead_front)
         self.overhead_profile_analyzer = PoseAnalyzer(calculate_overhead_profile)
         
@@ -94,11 +92,9 @@ class CalibrationController:
         return 1.0 if self.current_step == 'complete' else 0.0
     
     def process_frames(self, front_results, profile_results):
-        # Process bicep curl metrics
         self.front_analyzer.process_frame(front_results)
         self.profile_analyzer.process_frame(profile_results)
         
-        # Process overhead press metrics
         self.overhead_front_analyzer.process_frame(front_results)
         self.overhead_profile_analyzer.process_frame(profile_results)
         
@@ -169,20 +165,17 @@ class CalibrationController:
                     return True, "Teraz podnieś obie ręce na wysokość barków"
         
         elif self.current_step == 'overhead_start':
-            # Check if arms are at shoulder level (around 90 degrees elbow angle)
             avg_angle = overhead_front_metrics.get('avg_angle', 180)
             right_wrist_y = overhead_front_metrics.get('right_wrist_y', 0.5)
             left_wrist_y = overhead_front_metrics.get('left_wrist_y', 0.5)
             arm_sync_diff = overhead_front_metrics.get('arm_sync_diff', 0)
             trunk_angle = overhead_profile_metrics.get('trunk_angle', 180)
             
-            # Arms should be bent at roughly 90 degrees (at shoulder level)
             if 70 <= avg_angle <= 110:
                 mean_angle, angle_stable = self.measurement_buffer.add('overhead_start_angle', avg_angle)
                 
                 if angle_stable:
                     self.measurements['overhead_start_angle'] = mean_angle
-                    # Store wrist Y positions (average of both wrists)
                     self.measurements['overhead_start_wrist_y'] = (right_wrist_y + left_wrist_y) / 2
                     self.measurements['overhead_arm_sync'] = arm_sync_diff
                     self.measurements['overhead_trunk_deviation'] = abs(trunk_angle - 180)
@@ -191,18 +184,15 @@ class CalibrationController:
                     return True, "Teraz wyciśnij ręce maksymalnie nad głowę"
         
         elif self.current_step == 'overhead_top':
-            # Check if arms are fully extended overhead
             avg_angle = overhead_front_metrics.get('avg_angle', 90)
             right_wrist_y = overhead_front_metrics.get('right_wrist_y', 0.5)
             left_wrist_y = overhead_front_metrics.get('left_wrist_y', 0.5)
             
-            # Arms should be nearly straight (extended overhead)
             if avg_angle >= 155:
                 mean_angle, angle_stable = self.measurement_buffer.add('overhead_top_angle', avg_angle)
                 
                 if angle_stable:
                     self.measurements['overhead_top_angle'] = mean_angle
-                    # Store wrist Y position at top
                     self.measurements['overhead_top_wrist_y'] = (right_wrist_y + left_wrist_y) / 2
                     self.measurement_buffer.clear()
                     self.current_step = 'complete'

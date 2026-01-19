@@ -8,7 +8,6 @@ CALIBRATION_FILE = 'user_calibration.json'
 
 class CalibrationData:
     def __init__(self):
-        # Bicep curl calibration
         self.neutral_trunk_angle = 180
         self.right_min_angle = 30
         self.right_max_angle = 170
@@ -17,13 +16,12 @@ class CalibrationData:
         self.vertical_tolerance = 25
         self.trunk_tolerance = 20
         
-        # Overhead press calibration
-        self.overhead_start_angle = 90       # Arms at shoulder level (bottom)
-        self.overhead_top_angle = 170        # Arms fully extended overhead (top)
-        self.overhead_start_wrist_y = 0.4    # Wrist Y position at start (relative, 0=top, 1=bottom)
-        self.overhead_top_wrist_y = 0.2      # Wrist Y position at top
-        self.overhead_arm_sync_tolerance = 25  # Max angle difference between arms
-        self.overhead_trunk_tolerance = 20   # Max trunk deviation during press
+        self.overhead_start_angle = 90
+        self.overhead_top_angle = 170
+        self.overhead_start_wrist_y = 0.4
+        self.overhead_top_wrist_y = 0.2
+        self.overhead_arm_sync_tolerance = 25
+        self.overhead_trunk_tolerance = 20
         
         self.calibrated = False
         self.calibration_date = None
@@ -31,7 +29,6 @@ class CalibrationData:
     def calculate_thresholds(self, measurements):
         self.neutral_trunk_angle = measurements.get('neutral_trunk', 180)
         
-        # Bicep curl thresholds
         right_flex = measurements.get('right_flex_angle', 30)
         right_extend = measurements.get('right_extend_angle', 170)
         left_flex = measurements.get('left_flex_angle', 30)
@@ -50,23 +47,18 @@ class CalibrationData:
         trunk_deviation = abs(self.neutral_trunk_angle - 180)
         self.trunk_tolerance = max(20, trunk_deviation + 10)
         
-        # Overhead press thresholds
         overhead_start = measurements.get('overhead_start_angle', 90)
         overhead_top = measurements.get('overhead_top_angle', 170)
         
-        # Add margin to thresholds for reliable detection
-        self.overhead_start_angle = overhead_start + 10  # Slightly above measured start
-        self.overhead_top_angle = overhead_top - 10       # Slightly below measured top
+        self.overhead_start_angle = overhead_start + 10
+        self.overhead_top_angle = overhead_top - 10
         
-        # Y-position thresholds for active zone
         self.overhead_start_wrist_y = measurements.get('overhead_start_wrist_y', 0.4)
         self.overhead_top_wrist_y = measurements.get('overhead_top_wrist_y', 0.2)
         
-        # Arm sync tolerance based on measured symmetry
         overhead_sync = measurements.get('overhead_arm_sync', 10)
         self.overhead_arm_sync_tolerance = max(15, overhead_sync + 10)
         
-        # Trunk tolerance for overhead press
         overhead_trunk = measurements.get('overhead_trunk_deviation', 0)
         self.overhead_trunk_tolerance = max(15, overhead_trunk + 10)
         
@@ -82,7 +74,6 @@ class CalibrationData:
             'left_max_angle': self.left_max_angle,
             'vertical_tolerance': self.vertical_tolerance,
             'trunk_tolerance': self.trunk_tolerance,
-            # Overhead press parameters
             'overhead_start_angle': self.overhead_start_angle,
             'overhead_top_angle': self.overhead_top_angle,
             'overhead_start_wrist_y': self.overhead_start_wrist_y,
@@ -101,7 +92,6 @@ class CalibrationData:
         self.left_max_angle = data.get('left_max_angle', 170)
         self.vertical_tolerance = data.get('vertical_tolerance', 25)
         self.trunk_tolerance = data.get('trunk_tolerance', 15)
-        # Overhead press parameters
         self.overhead_start_angle = data.get('overhead_start_angle', 90)
         self.overhead_top_angle = data.get('overhead_top_angle', 170)
         self.overhead_start_wrist_y = data.get('overhead_start_wrist_y', 0.4)

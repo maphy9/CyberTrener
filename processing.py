@@ -180,7 +180,6 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event, a
     
     socketio.emit('status', {'state': 'waiting'})
     
-    # Load calibration data for both exercises
     calibration_data = CalibrationData.load()
     
     if exercise_type == 'overhead_press':
@@ -306,23 +305,18 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
     
     audio_handler = AudioHandler()
     
-    # Preload common phrases
     audio_handler.preload_speech(CALIBRATION_PHRASES + TRAINING_PHRASES)
     
-    # Check if calibration is needed
     calibration_data = CalibrationData.load()
-    # Always calibrate at the start of a training session for consistent UX
     needs_calibration = True
     
-    # Voice command callback for exercise navigation
     exercise_command_lock = Lock()
-    pending_command = [None]  # Using list to allow mutation in nested function
+    pending_command = [None]
     
     def exercise_command_callback(command):
         with exercise_command_lock:
             pending_command[0] = command
     
-    # === CALIBRATION PHASE ===
     if needs_calibration:
         socketio.emit('session-phase', {'phase': 'calibration'})
         
@@ -405,7 +399,6 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
             socketio.emit('front-frame', front_img.tobytes())
             socketio.emit('profile-frame', profile_img.tobytes())
         
-        # Check if stopped during calibration
         if stop_event.is_set():
             socketio.emit('session-ended')
             audio_handler.stop()
@@ -413,23 +406,19 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
             profile_stream.stop()
             return
     
-    # === EXERCISE PHASE ===
     socketio.emit('session-phase', {'phase': 'exercise'})
     session_start_time = time.time()
     
-    # Initialize session controller
     settings = TrainingSettings.from_dict(training_settings)
     session = TrainingSessionController(settings)
     session.calibration_data = calibration_data
     session.state.phase = SessionPhase.EXERCISE
     session._init_current_exercise()
     
-    # Reset metrics for first exercise
     reset_front, reset_profile = get_reset_functions(session.get_current_exercise_type())
     reset_front()
     reset_profile()
     
-    # Start voice command listener
     voice_thread = Thread(
         target=listen_for_voice_commands_unified,
         args=(audio_handler, stop_event, analyzing_event, exercise_command_callback),
@@ -437,10 +426,8 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
     )
     voice_thread.start()
     
-    # Announce first exercise
     audio_handler.queue_speech(session.get_announcement_for_start())
     
-    # Send initial state
     socketio.emit('training-state', session.get_state_dict())
     socketio.emit('status', {'state': 'waiting'})
     
@@ -459,7 +446,6 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
         if front_frame is None or profile_frame is None:
             continue
         
-        # Check for voice commands
         with exercise_command_lock:
             command = pending_command[0]
             pending_command[0] = None
@@ -479,7 +465,6 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
                     reset_front()
                     reset_profile()
         
-        # Check if training is complete
         if session.is_complete():
             audio_handler.queue_speech_priority("Trening zakończony.")
             stats = session.get_completion_stats()
@@ -542,20 +527,17 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
                         for part in result.get('error_parts', []):
                             error_states[part] = current_time + ERROR_DISPLAY_DURATION
                 
-                # Emit metrics
                 socketio.emit('metrics', {
                     'right_reps': session.state.right_reps,
                     'left_reps': session.state.left_reps,
                     'errors': []
                 })
                 
-                # Send full training state periodically
                 socketio.emit('training-state', session.get_state_dict())
                 
-                # Check for auto-advance (completed target reps)
                 current_time = time.time()
                 if session.check_set_complete() and current_time > auto_advance_cooldown:
-                    auto_advance_cooldown = current_time + 3.0  # 3 second cooldown
+                    auto_advance_cooldown = current_time + 3.0
                     event_result = session.advance_to_next()
                     _handle_exercise_transition(socketio, audio_handler, session, event_result, stop_event)
                     if not session.is_complete():
@@ -597,7 +579,7 @@ def _handle_exercise_transition(socketio, audio_handler, session, event_result, 
     event = event_result.get('event')
     
     if event == 'training_complete':
-        return  # Handled in main loop
+        return
     
     elif event == 'new_round':
         round_num = event_result['round']
@@ -620,5 +602,4 @@ def _handle_exercise_transition(socketio, audio_handler, session, event_result, 
         round_num = event_result['round']
         audio_handler.queue_speech_priority(f"Runda {round_num}. {exercise}.")
     
-    # Update UI
     socketio.emit('training-state', session.get_state_dict())

@@ -1,4 +1,3 @@
-// Load training settings from localStorage
 const trainingSettings = JSON.parse(
   localStorage.getItem("trainingSettings"),
 ) || {
@@ -14,18 +13,15 @@ const trainingSettings = JSON.parse(
 
 const sessionMode = localStorage.getItem("sessionMode") || "unified";
 
-// Exercise name mapping
 const EXERCISE_NAMES = {
   bicep_curl: "Uginanie przedramion",
   overhead_press: "Wyciskanie nad głowę",
 };
 
-// Set initial UI state - show calibration/connect prompt
 const exerciseNameSpan = document.getElementById("exercise-name");
 const roundInfo = document.getElementById("round-info");
 const roundText = document.getElementById("round-text");
 
-// Initial state: Show calibration prompt, hide exercise-specific info
 if (exerciseNameSpan) {
   exerciseNameSpan.textContent = "Kalibracja";
 }
@@ -33,7 +29,6 @@ if (roundText) {
   roundText.textContent = "Kliknij POŁĄCZ";
 }
 
-// Hide stats box initially (will be shown after calibration)
 const targetRepsSpan = document.getElementById("target-reps");
 const targetRepsLeftSpan = document.getElementById("target-reps-left");
 const statsBoxInit = document.getElementById("stats-box");
@@ -47,7 +42,7 @@ let timerStarted = false;
 let isConnected = false;
 let isAnalyzing = false;
 let isCalibrating = false;
-let currentPhase = "connecting"; // 'connecting', 'calibration', 'exercise', 'complete'
+let currentPhase = "connecting";
 
 const socket = io("http://localhost:5000");
 
@@ -152,12 +147,10 @@ function showCompleteUI(stats) {
 }
 
 function updateExerciseDisplay(exerciseType) {
-  // Update exercise name
   if (exerciseNameSpan) {
     exerciseNameSpan.textContent = EXERCISE_NAMES[exerciseType] || exerciseType;
   }
 
-  // Show/hide left arm row based on exercise type
   if (statLeftRow) {
     if (exerciseType === "overhead_press") {
       statLeftRow.style.display = "none";
@@ -322,7 +315,6 @@ socket.on("status", (data) => {
   }
 });
 
-// New unified session events
 socket.on("session-phase", (data) => {
   if (data.phase === "calibration") {
     isCalibrating = true;
@@ -335,17 +327,14 @@ socket.on("session-phase", (data) => {
 });
 
 socket.on("training-state", (data) => {
-  // Update exercise name
   if (exerciseNameSpan && data.currentExercise) {
     exerciseNameSpan.textContent = data.currentExercise;
   }
 
-  // Update round info
   if (roundText) {
     roundText.textContent = `Runda ${data.currentRound}/${data.totalRounds}`;
   }
 
-  // Update target reps
   if (targetRepsSpan) {
     targetRepsSpan.textContent = data.targetReps || 10;
   }
@@ -353,7 +342,6 @@ socket.on("training-state", (data) => {
     targetRepsLeftSpan.textContent = data.targetReps || 10;
   }
 
-  // Update exercise type display
   if (data.currentExerciseType) {
     updateExerciseDisplay(data.currentExerciseType);
   }
@@ -417,8 +405,6 @@ socket.on("calibration-complete", (data) => {
   }
 
   setVoiceStatus("Kalibracja zakończona! Rozpoczynam trening...");
-
-  // Transition to exercise phase will be handled by session-phase event
 });
 
 socket.on("session-ended", () => {

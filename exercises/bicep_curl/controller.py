@@ -70,7 +70,7 @@ class BicepCurlController:
                 result['right_reps'] = self.valid_right_reps
             else:
                 result['error_type'] = error_code
-                result['error_message'] = ERROR_MESSAGES.get(error_code, '') # type: ignore
+                result['error_message'] = ERROR_MESSAGES.get(error_code, '')
                 result['error_parts'] = error_parts
                 
         elif left_rep_detected:
@@ -88,7 +88,7 @@ class BicepCurlController:
                 result['left_reps'] = self.valid_left_reps
             else:
                 result['error_type'] = error_code
-                result['error_message'] = ERROR_MESSAGES.get(error_code, '') # type: ignore
+                result['error_message'] = ERROR_MESSAGES.get(error_code, '')
                 result['error_parts'] = error_parts
         
         return result

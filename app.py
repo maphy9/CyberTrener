@@ -124,15 +124,12 @@ def handle_start_session(data):
             return
 
         if session_mode == 'calibration':
-            # Legacy calibration-only mode
             target_fn = run_calibration_session
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event)
         elif session_mode == 'unified':
-            # New unified mode: calibration (if needed) + exercises
             target_fn = run_unified_training_session
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, training_settings, force_calibration)
         else:
-            # Legacy training mode (single exercise)
             exercise_type = data.get('exerciseType', 'bicep_curl')
             target_fn = process_camera_streams
             args = (socketio, front_camera_stream, profile_camera_stream, processing_event, analyzing_event, exercise_type)

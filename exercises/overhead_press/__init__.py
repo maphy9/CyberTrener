@@ -1,1 +1,0 @@
-# Overhead Press exercise package

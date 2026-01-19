@@ -122,7 +122,6 @@
   font-size: 0.85rem;
 }
 
-/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -205,7 +204,6 @@
   justify-content: flex-end;
 }
 
-/* Settings Sections */
 .settings-section {
   margin-bottom: 2rem;
 }
@@ -258,7 +256,6 @@
   border-color: var(--primary);
 }
 
-/* Exercise List */
 .exercise-list {
   list-style: none;
   padding: 0;
@@ -299,7 +296,6 @@
   font-size: 0.95rem;
 }
 
-/* Exercise Reps Input */
 .exercise-reps {
   display: flex;
   align-items: center;
@@ -327,7 +323,6 @@
   font-size: 0.8rem;
 }
 
-/* Toggle Switch */
 .exercise-toggle {
   position: relative;
   display: inline-block;
@@ -376,7 +371,6 @@
   background-color: var(--primary);
 }
 
-/* Camera Setup in Modal */
 .modal .camera-setup {
   background: var(--dark-light);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -458,7 +452,6 @@
   border-color: var(--primary);
 }
 
-/* Calibration Info */
 .calibration-info {
   padding: 0.75rem;
   background: var(--dark-light);
@@ -480,13 +473,11 @@
   color: var(--good);
 }
 
-/* Small Button */
 .btn-small {
   padding: 0.6rem 1.2rem;
   font-size: 0.85rem;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
   .app-title {
     font-size: 2rem;

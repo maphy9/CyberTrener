@@ -1,4 +1,3 @@
-// DOM Elements
 const startTrainingBtn = document.getElementById("start-training-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const historyBtn = document.getElementById("history-btn");
@@ -7,7 +6,6 @@ const modalClose = document.getElementById("modal-close");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
 const calibrationStatus = document.getElementById("calibration-status");
 
-// Camera inputs
 const frontTypeRadios = document.querySelectorAll('input[name="front-type"]');
 const profileTypeRadios = document.querySelectorAll(
   'input[name="profile-type"]',
@@ -17,11 +15,9 @@ const frontIpInput = document.getElementById("front-ip-input");
 const profilePhysicalInput = document.getElementById("profile-physical-input");
 const profileIpInput = document.getElementById("profile-ip-input");
 
-// Training settings inputs
 const roundsInput = document.getElementById("rounds");
 const exerciseList = document.getElementById("exercise-list");
 
-// Default settings
 const DEFAULT_SETTINGS = {
   exercises: ["bicep_curl", "overhead_press"],
   repsPerExercise: {
@@ -36,7 +32,6 @@ const DEFAULT_SETTINGS = {
   forceCalibration: false,
 };
 
-// Load settings from localStorage or use defaults
 function loadSettings() {
   const stored = localStorage.getItem("trainingSettings");
   if (stored) {
@@ -49,14 +44,11 @@ function loadSettings() {
   return DEFAULT_SETTINGS;
 }
 
-// Save settings to localStorage
 function saveSettings(settings) {
   localStorage.setItem("trainingSettings", JSON.stringify(settings));
 }
 
-// Get current settings from UI
 function getSettingsFromUI() {
-  // Get exercise order and enabled state
   const exerciseItems = exerciseList.querySelectorAll(".exercise-item");
   const exercises = [];
   const repsPerExercise = {};
@@ -74,7 +66,6 @@ function getSettingsFromUI() {
     }
   });
 
-  // Get camera settings
   const frontType = document.querySelector(
     'input[name="front-type"]:checked',
   ).value;
@@ -107,17 +98,13 @@ function getSettingsFromUI() {
   };
 }
 
-// Apply settings to UI
 function applySettingsToUI(settings) {
-  // Training params
   roundsInput.value = settings.rounds;
 
-  // Exercise order and enabled state
   const exerciseItems = Array.from(
     exerciseList.querySelectorAll(".exercise-item"),
   );
 
-  // Reorder based on settings
   settings.exercises.forEach((exerciseId) => {
     const item = exerciseItems.find((el) => el.dataset.exercise === exerciseId);
     if (item) {
@@ -125,7 +112,6 @@ function applySettingsToUI(settings) {
     }
   });
 
-  // Set checkbox states and per-exercise reps
   const repsPerExercise = settings.repsPerExercise || {};
   exerciseList.querySelectorAll(".exercise-item").forEach((item) => {
     const checkbox = item.querySelector('input[type="checkbox"]');
@@ -140,7 +126,6 @@ function applySettingsToUI(settings) {
     }
   });
 
-  // Camera settings
   const cam = settings.cameraSettings;
 
   if (cam.front.type === "physical") {
@@ -174,7 +159,6 @@ function applySettingsToUI(settings) {
   }
 }
 
-// Validate camera settings
 function validateCameraSettings(settings) {
   const cam = settings.cameraSettings;
 
@@ -205,7 +189,6 @@ function validateCameraSettings(settings) {
   return true;
 }
 
-// Check calibration status
 function checkCalibrationStatus() {
   fetch("/api/calibration-status")
     .then((res) => res.json())
@@ -233,7 +216,6 @@ function checkCalibrationStatus() {
     });
 }
 
-// Modal controls
 function openModal() {
   settingsModal.classList.add("active");
   applySettingsToUI(loadSettings());
@@ -244,7 +226,6 @@ function closeModal() {
   settingsModal.classList.remove("active");
 }
 
-// Start training
 function startTraining(forceCalibration = false) {
   const settings = getSettingsFromUI();
   settings.forceCalibration = forceCalibration;
@@ -253,13 +234,11 @@ function startTraining(forceCalibration = false) {
 
   saveSettings(settings);
 
-  // Set session mode - will be determined by server based on calibration status
   localStorage.setItem("sessionMode", "unified");
 
   window.location.href = "/training";
 }
 
-// Drag and drop for exercise reordering
 let draggedItem = null;
 
 function initDragDrop() {
@@ -295,7 +274,6 @@ function initDragDrop() {
   });
 }
 
-// Camera type toggle handlers
 frontTypeRadios.forEach((radio) => {
   radio.addEventListener("change", (e) => {
     if (e.target.value === "physical") {
@@ -320,7 +298,6 @@ profileTypeRadios.forEach((radio) => {
   });
 });
 
-// Event listeners
 startTrainingBtn.addEventListener("click", () => {
   const settings = loadSettings();
   applySettingsToUI(settings);
@@ -350,14 +327,12 @@ saveSettingsBtn.addEventListener("click", () => {
   }
 });
 
-// Keyboard support
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && settingsModal.classList.contains("active")) {
     closeModal();
   }
 });
 
-// Initialize
 applySettingsToUI(loadSettings());
 checkCalibrationStatus();
 initDragDrop();

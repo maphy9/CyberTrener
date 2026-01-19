@@ -55,6 +55,7 @@ _profile_phase_detector = PhaseDetector(
 
 
 def reset_front_view_state():
+    """Resetuje stan filtrów i detektorów (widok przód)."""
     for smoother in _front_smoothers.values():
         smoother.reset()
     for detector in _front_phase_detectors.values():
@@ -62,12 +63,14 @@ def reset_front_view_state():
 
 
 def reset_profile_view_state():
+    """Resetuje stan filtrów i detektorów (widok profil)."""
     for smoother in _profile_smoothers.values():
         smoother.reset()
     _profile_phase_detector.reset()
 
 
 def calculate_front_view(results, history):
+    """Liczy metryki z widoku przodu dla uginania."""
     landmarks = extract_pose_landmarks(results)
     if not landmarks:
         return None
@@ -172,6 +175,7 @@ def calculate_front_view(results, history):
 
 
 def calculate_profile_view(results, history):
+    """Liczy metryki z widoku profilu dla uginania."""
     landmarks = extract_pose_landmarks(results)
     if not landmarks:
         return None

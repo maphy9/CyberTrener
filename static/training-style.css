@@ -401,7 +401,6 @@
   border-color: var(--secondary);
 }
 
-/* Header info with round display */
 .header-info {
   display: flex;
   flex-direction: column;
@@ -421,7 +420,6 @@
   border: 1px solid rgba(0, 255, 136, 0.3);
 }
 
-/* Exercise navigation buttons */
 .exercise-nav {
   display: flex;
   gap: 0.5rem;
@@ -433,7 +431,6 @@
   font-size: 0.85rem;
 }
 
-/* Target reps display */
 .stat-target {
   font-size: 0.9rem;
   color: var(--text-muted);
@@ -448,7 +445,6 @@
   border-top: 1px solid rgba(0, 212, 255, 0.1);
 }
 
-/* Training complete box */
 .complete-box {
   background: linear-gradient(
     135deg,
@@ -514,7 +510,6 @@
   padding: 0.8rem 1.5rem;
 }
 
-/* Small button variant */
 .btn-small {
   padding: 0.6rem 1rem;
   font-size: 0.85rem;

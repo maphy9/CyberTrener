@@ -6,6 +6,7 @@ MIN_LANDMARK_VISIBILITY = 0.5
 
 
 def extract_pose_landmarks(results):
+    """Wyciąga landmarki z wyniku MediaPipe."""
     landmarks = {}
     try:
         landmark_list = results.pose_landmarks.landmark
@@ -17,6 +18,7 @@ def extract_pose_landmarks(results):
 
 
 def get_landmark_confidence(landmarks, indices):
+    """Średnia widoczność wybranych punktów."""
     if not landmarks:
         return 0.0
     
@@ -29,6 +31,7 @@ def get_landmark_confidence(landmarks, indices):
 
 
 def check_landmarks_visible(landmarks, indices, min_visibility=None):
+    """Sprawdza widoczność kluczowych punktów."""
     if min_visibility is None:
         min_visibility = MIN_LANDMARK_VISIBILITY
     
@@ -42,6 +45,7 @@ def check_landmarks_visible(landmarks, indices, min_visibility=None):
 
 
 def calculate_angle(point_a, point_b, point_c):
+    """Kąt w stawie (B) w stopniach."""
     vector_ba = np.array([point_a[0] - point_b[0], point_a[1] - point_b[1]])
     vector_bc = np.array([point_c[0] - point_b[0], point_c[1] - point_b[1]])
     
@@ -56,27 +60,22 @@ def calculate_angle(point_a, point_b, point_c):
 
 
 def calculate_trunk_angle(shoulder, hip):
-    """Calculate trunk angle. Returns ~180 for upright stance, <180 for forward lean, >180 for backward lean."""
+    """Kąt tułowia: ~180 prosto, <180 pochylenie w przód, >180 w tył."""
     spine_vector = np.array([shoulder[0] - hip[0], shoulder[1] - hip[1]])
     
     spine_length = np.linalg.norm(spine_vector)
     if spine_length == 0:
         return 180
     
-    # Calculate horizontal deviation (positive = forward lean, negative = backward)
-    # In image coordinates, Y increases downward, so shoulder above hip means negative Y diff
-    # X deviation: positive means shoulder is to the right of hip
-    horizontal_deviation = spine_vector[0]  # X component
+    horizontal_deviation = spine_vector[0]
     
-    # Calculate angle from vertical: atan2 gives signed angle
-    # For upright: spine_vector ≈ (0, negative) -> angle ≈ 0
     angle_from_vertical = math.degrees(math.atan2(horizontal_deviation, -spine_vector[1]))
     
-    # Return as 180 +/- deviation (180 = straight, <180 = forward, >180 = backward)
     return 180 + angle_from_vertical
 
 
 def calculate_arm_verticality(shoulder, elbow):
+    """Odchylenie ramienia od pionu (stopnie)."""
     arm_vector = np.array([elbow[0] - shoulder[0], elbow[1] - shoulder[1]])
     vertical_axis = np.array([0, -1])
     
@@ -90,6 +89,7 @@ def calculate_arm_verticality(shoulder, elbow):
 
 
 def calculate_elbow_to_torso_distance(elbow, left_shoulder, right_shoulder):
+    """Dystans łokcia do tułowia znormalizowany szerokością barków."""
     left_np = np.array([left_shoulder[0], left_shoulder[1]])
     right_np = np.array([right_shoulder[0], right_shoulder[1]])
     elbow_np = np.array([elbow[0], elbow[1]])
@@ -105,26 +105,21 @@ def calculate_elbow_to_torso_distance(elbow, left_shoulder, right_shoulder):
 
 
 def calculate_wrist_to_shoulder_distance(wrist, shoulder):
+    """Dystans nadgarstka do barku (współrzędne 2D)."""
     wrist_np = np.array([wrist[0], wrist[1]])
     shoulder_np = np.array([shoulder[0], shoulder[1]])
     return np.linalg.norm(wrist_np - shoulder_np)
 
 
 def smooth_value(current_value, previous_value, smoothing_factor=0.25):
+    """Proste wygładzanie liniowe."""
     if previous_value is None:
         return current_value
     return smoothing_factor * current_value + (1 - smoothing_factor) * previous_value
 
 
 def adaptive_smooth_value(current_value, previous_value, base_smoothing=0.25, velocity_threshold=5.0):
-    """
-    Adaptive smoothing that reduces lag during fast movements.
-    - Slow movement: higher smoothing (more stable)
-    - Fast movement: lower smoothing (more responsive)
-    
-    Returns:
-        tuple: (smoothed_value, velocity)
-    """
+    """Adaptacyjne wygładzanie: stabilnie i szybko bez dużego laga."""
     if previous_value is None:
         return current_value, 0.0
     
@@ -140,17 +135,14 @@ def adaptive_smooth_value(current_value, previous_value, base_smoothing=0.25, ve
 
 
 def exponential_moving_average(current_value, ema_value, alpha=0.3):
-    """Standard EMA for consistent smoothing."""
+    """Klasyczne EMA."""
     if ema_value is None:
         return current_value
     return alpha * current_value + (1 - alpha) * ema_value
 
 
 class AdaptiveSmoother:
-    """
-    Stateful adaptive smoother that tracks velocity and adjusts smoothing dynamically.
-    Useful for per-joint smoothing with independent state.
-    """
+    """Stanowy filtr adaptacyjny dla pojedynczego sygnału."""
     
     def __init__(self, base_smoothing=0.25, velocity_threshold=5.0, velocity_smoothing=0.3):
         self.base_smoothing = base_smoothing
@@ -160,12 +152,7 @@ class AdaptiveSmoother:
         self.smoothed_velocity = 0.0
     
     def update(self, current_value):
-        """
-        Update smoother with new value.
-        
-        Returns:
-            float: Smoothed value
-        """
+        """Aktualizuje i zwraca wartość wygładzoną."""
         if self.previous_value is None:
             self.previous_value = current_value
             return current_value
@@ -191,15 +178,17 @@ class AdaptiveSmoother:
         return smoothed
     
     def reset(self):
-        """Reset smoother state."""
+        """Resetuje stan filtra."""
         self.previous_value = None
         self.smoothed_velocity = 0.0
     
     def get_velocity(self):
+        """Zwraca wygładzoną prędkość zmian."""
         return self.smoothed_velocity
 
 
 def detect_phase(angle, flex_threshold=80, extend_threshold=120):
+    """Klasyfikuje fazę ruchu po kącie."""
     if angle <= flex_threshold:
         return 'flexed'
     elif angle >= extend_threshold:
@@ -208,6 +197,7 @@ def detect_phase(angle, flex_threshold=80, extend_threshold=120):
 
 
 def detect_phase_with_hysteresis(angle, current_phase, flex_threshold=80, extend_threshold=120, hysteresis=10):
+    """Faza z histerezą, stabilniejsza od szumu."""
     if current_phase == 'flexed':
         if angle >= flex_threshold + hysteresis:
             if angle >= extend_threshold:
@@ -231,6 +221,7 @@ def detect_phase_with_hysteresis(angle, current_phase, flex_threshold=80, extend
 
 
 class PhaseDetector:
+    """Detektor fazy z pamięcią i stabilnością klatek."""
     def __init__(self, flex_threshold=80, extend_threshold=120, hysteresis=10):
         self.flex_threshold = flex_threshold
         self.extend_threshold = extend_threshold
@@ -240,6 +231,7 @@ class PhaseDetector:
         self.frames_in_phase = 0
     
     def update(self, angle):
+        """Aktualizuje fazę i zwraca jej nazwę."""
         previous_phase = self.current_phase
         self.current_phase = detect_phase_with_hysteresis(
             angle, 
@@ -260,12 +252,15 @@ class PhaseDetector:
         return self.current_phase
     
     def get_phase(self):
+        """Bieżąca faza ruchu."""
         return self.current_phase
     
     def is_stable(self, min_frames=5):
+        """Czy faza trwa min. liczbę klatek."""
         return self.frames_in_phase >= min_frames
     
     def reset(self):
+        """Resetuje stan detektora."""
         self.current_phase = 'middle'
         self.phase_history = []
         self.frames_in_phase = 0

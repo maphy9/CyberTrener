@@ -7,7 +7,6 @@ class OverheadPressController:
     def __init__(self, calibration=None):
         self.calibration = calibration
         
-        # Create wrapper functions that pass calibration to metrics
         def front_view_with_calibration(results, history):
             return calculate_front_view(results, history, calibration)
         

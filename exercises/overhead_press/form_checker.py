@@ -73,7 +73,7 @@ class OverheadPressValidator:
             if trunk_error_ratio > 0.15:
                 return False, 'trunk_tilted', ['trunk']
             
-            if sync_error_ratio > 0.15:
+            if sync_error_ratio > 0.07:
                 return False, 'arms_not_synchronized', ['left_arm', 'right_arm']
         
         return True, None, []

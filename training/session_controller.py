@@ -28,10 +28,8 @@ class TrainingSettings:
     def from_dict(cls, data: dict) -> "TrainingSettings":
         exercises = data.get("exercises", ["bicep_curl", "overhead_press"])
         
-        # Support both old format (single repsPerSet) and new format (repsPerExercise dict)
         reps_data = data.get("repsPerExercise", {})
         if not reps_data:
-            # Fallback to old single value for all exercises
             default_reps = data.get("repsPerSet", 10)
             reps_data = {ex: default_reps for ex in exercises}
         
@@ -211,7 +209,6 @@ class TrainingSessionController:
         if exercise_type == "overhead_press":
             return self.state.right_reps >= target_reps
         else:
-            # For bicep curl, check if both arms completed
             return (self.state.right_reps >= target_reps and 
                     self.state.left_reps >= target_reps)
     
@@ -248,7 +245,6 @@ class TrainingSessionController:
                     "exercise": self.get_current_exercise_name()
                 }
         else:
-            # Next exercise in same round
             self.state.current_exercise_index = next_exercise_index
             self._init_current_exercise()
             return {
@@ -269,7 +265,6 @@ class TrainingSessionController:
                 "round": self.state.current_round
             }
         elif self.state.current_round > 1:
-            # Go to last exercise of previous round
             self.state.current_round -= 1
             self.state.current_exercise_index = len(self.settings.exercises) - 1
             self._init_current_exercise()
