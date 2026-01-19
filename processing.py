@@ -55,6 +55,14 @@ for reps in [5, 10, 12, 15, 20, 25, 30]:
 
 
 def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
+    """
+    Uruchamia sesję kalibracji użytkownika.
+    Parametry:
+    - socketio: instancja SocketIO do komunikacji
+    - front_stream: strumień z kamery przedniej
+    - profile_stream: strumień z kamery bocznej
+    - stop_event: event zatrzymania
+    """
     front_pose = mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
@@ -156,12 +164,33 @@ def run_calibration_session(socketio, front_stream, profile_stream, stop_event):
 
 
 def process_camera_streams(socketio, front_stream, profile_stream, stop_event, analyzing_event, exercise_type='bicep_curl'):
+    """
+    Przetwarza strumienie kamer dla pojedynczego ćwiczenia.
+    Parametry:
+    - socketio: instancja SocketIO do komunikacji
+    - front_stream: strumień z kamery przedniej
+    - profile_stream: strumień z kamery bocznej
+    - stop_event: event zatrzymania
+    - analyzing_event: event analizy
+    - exercise_type: typ ćwiczenia
+    """
     front_pose = mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
         model_complexity=1
     )
     profile_pose = mp_pose.Pose(
+        """
+        Uruchamia zintegrowaną sesję treningową (kalibracja + ćwiczenia).
+        Parametry:
+        - socketio: instancja SocketIO do komunikacji
+        - front_stream: strumień z kamery przedniej
+        - profile_stream: strumień z kamery bocznej
+        - stop_event: event zatrzymania
+        - analyzing_event: event analizy
+        - training_settings: ustawienia treningu
+        - force_calibration: wymuszenie kalibracji
+        """
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
         model_complexity=1
@@ -285,11 +314,11 @@ def process_camera_streams(socketio, front_stream, profile_stream, stop_event, a
 
 def run_unified_training_session(socketio, front_stream, profile_stream, stop_event, analyzing_event, training_settings, force_calibration=False):
     """
-    Unified training session that handles:
-    1. Calibration (if needed or forced)
-    2. Multiple exercises in sequence
-    3. Multiple rounds (podejścia)
-    4. Voice commands for navigation
+    Ujednolicona sesja treningowa obejmująca:
+    1. Kalibrację (w razie potrzeby lub konieczności)
+    2. Kilka ćwiczeń wykonywanych po kolei
+    3. Kilka rund (podejść)
+    4. Polecenia głosowe do nawigacji
     """
     
     front_pose = mp_pose.Pose(
@@ -575,7 +604,7 @@ def run_unified_training_session(socketio, front_stream, profile_stream, stop_ev
 
 
 def _handle_exercise_transition(socketio, audio_handler, session, event_result, stop_event):
-    """Handle announcements and UI updates for exercise transitions."""
+    """Obsługa komunikatów i aktualizacji interfejsu użytkownika podczas przejść między ćwiczeniami."""
     event = event_result.get('event')
     
     if event == 'training_complete':

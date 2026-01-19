@@ -12,6 +12,7 @@ import io
 
 
 class AudioHandler:
+    """Obsługuje dźwięk i mowę w aplikacji."""
     def __init__(self):
         self.sound_queue = Queue()
         self.running = True
@@ -173,8 +174,8 @@ class AudioHandler:
 
 def listen_for_voice_commands(audio_handler, stop_event, analyzing_event):
     """
-    Original voice command listener (for backward compatibility).
-    Only supports start/stop commands.
+    Oryginalny moduł nasłuchujący polecenia głosowe (w celu zapewnienia kompatybilności wstecznej).
+    Obsługuje wyłącznie polecenia uruchamiania/zatrzymywania.
     """
     recognizer = sr.Recognizer()
     recognizer.energy_threshold = 300

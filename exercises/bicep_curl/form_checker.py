@@ -17,6 +17,8 @@ class AlternatingBicepCurlValidator:
             self.vertical_tolerance = VERTICAL_STANCE_THRESHOLD
             self.neutral_trunk_angle = 180
     
+class BicepCurlFormChecker:
+    """Sprawdza poprawność techniki ćwiczenia bicepsów."""
     def check_simultaneous_flexion(self, front_metrics):
         right_rep_flag = front_metrics.get('right_rep_flag', False)
         left_rep_flag = front_metrics.get('left_rep_flag', False)

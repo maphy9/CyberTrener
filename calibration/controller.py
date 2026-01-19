@@ -9,6 +9,7 @@ from calibration.data import CalibrationData
 
 
 class MeasurementBuffer:
+    """Bufor pomiarów do stabilizacji wartości."""
     def __init__(self, buffer_size=20, max_std_dev=3.0):
         self.buffer_size = buffer_size
         self.max_std_dev = max_std_dev
@@ -51,6 +52,7 @@ class MeasurementBuffer:
 
 
 class CalibrationController:
+    """Steruje procesem kalibracji użytkownika."""
     def __init__(self):
         self.front_analyzer = PoseAnalyzer(calculate_front_view)
         self.profile_analyzer = PoseAnalyzer(calculate_profile_view)

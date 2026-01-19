@@ -1,3 +1,4 @@
+"""Oblicza metryki dla ćwiczenia bicepsów."""
 from core.calculations import (
     extract_pose_landmarks,
     get_landmark_confidence,

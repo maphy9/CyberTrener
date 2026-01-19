@@ -7,6 +7,7 @@ CALIBRATION_FILE = 'user_calibration.json'
 
 
 class CalibrationData:
+    """Przechowuje i oblicza dane kalibracyjne."""
     def __init__(self):
         self.neutral_trunk_angle = 180
         self.right_min_angle = 30

@@ -2,6 +2,7 @@ from collections import deque
 
 
 class PoseAnalyzer:
+    """Analizuje pozycję na podstawie klatek."""
     def __init__(self, calculation_fn, max_history=30):
         self.calculation_fn = calculation_fn
         self.history = deque(maxlen=max_history)
@@ -18,6 +19,7 @@ class PoseAnalyzer:
 
 
 class EnhancedPoseAnalyzer:
+    """Zaawansowana analiza pozycji z interpolacją i stabilnością."""
     def __init__(self, calculation_fn, max_history=30, max_interpolation_frames=5):
         self.calculation_fn = calculation_fn
         self.history = deque(maxlen=max_history)

@@ -4,6 +4,7 @@ from exercises.bicep_curl.form_checker import AlternatingBicepCurlValidator, ERR
 
 
 class BicepCurlController:
+    """Steruje ćwiczeniem uginania ramienia."""
     def __init__(self, calibration=None):
         self.front_analyzer = EnhancedPoseAnalyzer(calculate_front_view)
         self.profile_analyzer = EnhancedPoseAnalyzer(calculate_profile_view)

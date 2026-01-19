@@ -27,6 +27,7 @@ ERROR_COLOR = (0, 0, 255)
 
 
 def draw_pose_with_errors(frame, results, error_states):
+    """Rysuje pozę i podświetla błędy na obrazie."""
     if not results.pose_landmarks:
         return
     

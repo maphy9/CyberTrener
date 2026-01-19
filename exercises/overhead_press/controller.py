@@ -4,6 +4,7 @@ from exercises.overhead_press.form_checker import OverheadPressValidator, ERROR_
 
 
 class OverheadPressController:
+    """Steruje ćwiczeniem wyciskania nad głowę."""
     def __init__(self, calibration=None):
         self.calibration = calibration
         

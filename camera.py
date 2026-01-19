@@ -3,6 +3,7 @@ import cv2
 from threading import Thread, Lock
 
 class CameraStream:
+    """Obsługuje strumień wideo z kamery."""
     def __init__(self, source, width, height):
         self.stream = cv2.VideoCapture(source)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)

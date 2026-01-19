@@ -20,6 +20,7 @@ const ERROR_NAMES = {
   arms_not_synchronized: "Niesynchroniczne ruchy rąk",
 };
 
+// Formatuje datę do czytelnej postaci
 function formatDate(isoString) {
   const date = new Date(isoString);
   return date.toLocaleDateString("pl-PL", {
@@ -29,6 +30,7 @@ function formatDate(isoString) {
   });
 }
 
+// Formatuje godzinę do czytelnej postaci
 function formatTime(isoString) {
   const date = new Date(isoString);
   return date.toLocaleTimeString("pl-PL", {
@@ -37,6 +39,7 @@ function formatTime(isoString) {
   });
 }
 
+// Przelicza sekundy na minuty i sekundy
 function formatDuration(seconds) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -44,12 +47,14 @@ function formatDuration(seconds) {
   return `${mins}m ${secs}s`;
 }
 
+// Formatuje wartość poprawy jako procent
 function formatImprovement(value) {
   if (value === null || value === undefined) return null;
   const sign = value >= 0 ? "+" : "";
   return `${sign}${value.toFixed(1)}%`;
 }
 
+// Zwraca klasę CSS dla poprawy
 function getImprovementClass(value, lowerIsBetter = false) {
   if (value === null || value === undefined) return "neutral";
   if (lowerIsBetter) {
@@ -58,6 +63,7 @@ function getImprovementClass(value, lowerIsBetter = false) {
   return value >= 0 ? "positive" : "negative";
 }
 
+// Ładuje i wyświetla listę sesji treningowych
 async function loadSessions() {
   sessionsList.innerHTML = '<div class="loading">Ładowanie...</div>';
 
@@ -139,6 +145,7 @@ async function loadSessions() {
   }
 }
 
+// Otwiera szczegóły wybranej sesji
 async function openSessionDetail(sessionId) {
   currentSessionId = sessionId;
 
@@ -264,11 +271,13 @@ async function openSessionDetail(sessionId) {
   }
 }
 
+// Zamyka okno szczegółów sesji
 function closeModal() {
   detailModal.classList.remove("active");
   currentSessionId = null;
 }
 
+// Usuwa wybraną sesję treningową
 async function deleteSession() {
   if (!currentSessionId) return;
 
